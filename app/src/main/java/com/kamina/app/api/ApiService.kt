@@ -19,5 +19,9 @@ interface ApiService {
      @GET("api/user_icon/{userId}")
      fun getUserIcon(@Path("userId") userId: String): Call<UserIconResponse>
 
+    @GET("api/entities")
+    fun getEntities(): Call<List<EntityResponse>>
+
+
 }
 

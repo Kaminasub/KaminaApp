@@ -8,7 +8,7 @@
         android:id="@+id/backgroundImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/loginbg"
+        android:src="@drawable/loginbackground"
         android:scaleType="centerCrop"
         android:adjustViewBounds="true"
         android:background="@drawable/rounded_image"/>

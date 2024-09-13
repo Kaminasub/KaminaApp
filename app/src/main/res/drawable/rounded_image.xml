@@ -12,7 +12,7 @@
     <!-- Second layer: The actual image -->
     <item>
         <bitmap
-            android:src="@drawable/loginbg"
+            android:src="@drawable/loginbackground"
             android:gravity="center" />
     </item>
 
