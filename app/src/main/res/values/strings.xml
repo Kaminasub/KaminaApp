@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">KaminaApp</string>
+    <string name="swipe_to_login_password">Swipe to Login with Password</string>
+    <string name="swipe_to_login_pin">Swipe to Login with PIN</string>
 </resources>
