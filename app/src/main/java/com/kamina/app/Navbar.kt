@@ -1,5 +1,5 @@
-package com.kamina.app
-
+import android.content.Context
+import android.content.SharedPreferences
 import android.app.Activity
 import android.content.Intent
 import androidx.compose.foundation.Image
@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavHostController
@@ -39,18 +40,34 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import androidx.compose.ui.platform.LocalConfiguration
+import com.kamina.app.HomePageActivity
+import com.kamina.app.LoginActivity
+import com.kamina.app.R
+
+@Preview(showBackground = true)
+@Composable
+fun NavbarPreview() {
+    Navbar(navController = rememberNavController())
+}
 
 @Composable
-fun Navbar(navController: NavHostController = rememberNavController(), userId: String) {
+fun Navbar(navController: NavHostController = rememberNavController()) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Fetch user icon from API using the user ID
+    // Retrieve the userId from SharedPreferences
+    val sharedPreferences: SharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+    val userId = sharedPreferences.getString("userId", null)
+
+    // Fetch user icon if userId is not null
     var userIconUrl by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(userId) {
-        fetchUserIcon(userId) { iconUrl ->
-            userIconUrl = iconUrl
+        userId?.let {
+            fetchUserIcon(it) { iconUrl ->
+                userIconUrl = iconUrl
+            }
         }
     }
 
@@ -76,11 +93,12 @@ fun Navbar(navController: NavHostController = rememberNavController(), userId: S
 
         // Right User Icon with Dropdown Menu
         Box {
+            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
             Image(
                 painter = painter, // Coil painter to load user icon
                 contentDescription = "User Menu",
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(50.dp)
                     .clickable { expanded = true }
             )
 
@@ -95,17 +113,16 @@ fun Navbar(navController: NavHostController = rememberNavController(), userId: S
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        // Handle logout
+                        // Handle home navigation
                         val intent = Intent(context, HomePageActivity::class.java)
                         context.startActivity(intent)
                         (context as? Activity)?.finishAffinity()
                     },
-                    text = { Text("home") }
+                    text = { Text("Home") }
                 )
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        // Navigate to Series
                         navController.navigate("series")
                     },
                     text = { Text("Series") }
@@ -113,7 +130,6 @@ fun Navbar(navController: NavHostController = rememberNavController(), userId: S
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        // Navigate to Movies
                         navController.navigate("movies")
                     },
                     text = { Text("Movies") }
@@ -121,7 +137,6 @@ fun Navbar(navController: NavHostController = rememberNavController(), userId: S
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        // Navigate to Search
                         navController.navigate("search")
                     },
                     text = { Text("Search") }
@@ -129,7 +144,6 @@ fun Navbar(navController: NavHostController = rememberNavController(), userId: S
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        // Navigate to Configuration
                         navController.navigate("configuration")
                     },
                     text = { Text("Configuration") }
@@ -161,7 +175,7 @@ fun fetchUserIcon(userId: String, onResult: (String?) -> Unit) {
     api.getUserIcon(userId).enqueue(object : Callback<UserIconResponse> {
         override fun onResponse(call: Call<UserIconResponse>, response: Response<UserIconResponse>) {
             if (response.isSuccessful) {
-                val iconUrl = response.body()?.userIcon
+                val iconUrl = "https://api.kaminajp.com" + response.body()?.userIcon
                 onResult(iconUrl)
             } else {
                 onResult(null)

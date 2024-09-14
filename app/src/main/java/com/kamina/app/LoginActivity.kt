@@ -24,9 +24,12 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.graphics.Color  // For setting text colors
 import android.view.ViewGroup
+import android.content.Context
+import android.content.SharedPreferences
 
 class LoginActivity : AppCompatActivity() {
 
+    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var usernameDropdown: Spinner
     private lateinit var pinLayout: LinearLayout
     private lateinit var pinEditText1: EditText
@@ -43,6 +46,9 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
+        // Initialize sharedPreferences
+        sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
 
         // Hide status and navigation bars
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -208,13 +214,11 @@ class LoginActivity : AppCompatActivity() {
     private fun performPinLogin(username: String, pin: String) {
         Log.d("LoginActivity", "Performing PIN login for user: $username with PIN: $pin")
 
-        // Ensure username and pin are not empty
         if (username.isEmpty() || pin.isEmpty()) {
             showError("Username or PIN cannot be empty")
             return
         }
 
-        // Retrofit setup
         val retrofit = Retrofit.Builder()
             .baseUrl("https://api.kaminajp.com")
             .addConverterFactory(GsonConverterFactory.create())
@@ -226,6 +230,10 @@ class LoginActivity : AppCompatActivity() {
         api.loginWithPin(pinLoginRequest).enqueue(object : Callback<LoginResponse> {
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                 if (response.isSuccessful) {
+                    // Get the userId from the API response and save it in SharedPreferences
+                    val userId = response.body()?.userId
+                    saveUserId(userId ?: "")
+
                     Log.d("LoginActivity", "Login with PIN successful")
                     navigateToHomePage()
                 } else {
@@ -265,7 +273,6 @@ class LoginActivity : AppCompatActivity() {
     private fun performPasswordLogin(username: String, password: String) {
         Log.d("LoginActivity", "Performing password login for user: $username")
 
-        // Ensure username and password are not empty
         if (username.isEmpty() || password.isEmpty()) {
             showError("Username or password cannot be empty")
             return
@@ -282,6 +289,10 @@ class LoginActivity : AppCompatActivity() {
         api.login(loginRequest).enqueue(object : Callback<LoginResponse> {
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                 if (response.isSuccessful) {
+                    // Get the userId from the API response and save it in SharedPreferences
+                    val userId = response.body()?.userId
+                    saveUserId(userId ?: "")
+
                     Log.d("LoginActivity", "Login successful")
                     navigateToHomePage()
                 } else {
@@ -295,13 +306,24 @@ class LoginActivity : AppCompatActivity() {
         })
     }
 
-    private fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    private fun saveUserId(userId: String) {
+        val editor = sharedPreferences.edit()
+        editor.putString("userId", userId)
+        editor.apply()
+
+        // Log to check if the userId is saved correctly
+        val storedUserId = sharedPreferences.getString("userId", null)
+        Log.d("LoginActivity", "Stored User ID: $storedUserId")
     }
+
 
     private fun navigateToHomePage() {
         val intent = Intent(this, HomePageActivity::class.java)
         startActivity(intent)
-        finish()  // Optionally finish the LoginActivity to prevent returning to it
+        finish()
+    }
+
+    private fun showError(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 }
