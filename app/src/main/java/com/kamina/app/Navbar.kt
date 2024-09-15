@@ -8,7 +8,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +46,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.kamina.app.HomePageActivity
 import com.kamina.app.LoginActivity
 import com.kamina.app.R
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.blur
 
 @Preview(showBackground = true)
 @Composable
@@ -76,7 +80,7 @@ fun Navbar(navController: NavHostController = rememberNavController()) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -107,8 +111,8 @@ fun Navbar(navController: NavHostController = rememberNavController()) {
                 onDismissRequest = { expanded = false },
                 properties = PopupProperties(focusable = true),
                 modifier = Modifier
-                    .width(150.dp)
-                    .background(Color.White, shape = RoundedCornerShape(8.dp))
+                    .width(120.dp)
+                    .blur (radiusX = 15.dp, radiusY = 15.dp)
             ) {
                 DropdownMenuItem(
                     onClick = {

@@ -50,6 +50,7 @@ class LoginActivity : AppCompatActivity() {
         // Initialize sharedPreferences
         sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
 
+
         // Hide status and navigation bars
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false)
