@@ -35,6 +35,32 @@
             android:exported="true"
             android:theme="@style/Theme.KaminaApp">
         </activity>
+        <activity
+            android:name=".SeriesActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KaminaApp">
+        </activity>
+        <activity
+            android:name=".MoviesActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KaminaApp">
+        </activity>
+        <activity
+            android:name=".ConfigurationActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KaminaApp">
+        </activity>
+        <activity
+            android:name=".DetailPageActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KaminaApp">
+        </activity>
+        <activity
+            android:name=".SearchPageActivity"
+            android:exported="true"
+            android:theme="@style/Theme.KaminaApp">
+        </activity>
+
     </application>
 
 </manifest>

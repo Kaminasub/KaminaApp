@@ -1,20 +1,16 @@
-import android.content.Context
-import android.content.SharedPreferences
+
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -26,50 +22,44 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
+import com.kamina.app.ConfigurationActivity
+import com.kamina.app.HomePageActivity
+import com.kamina.app.LoginActivity
+import com.kamina.app.MoviesActivity
+import com.kamina.app.R
+import com.kamina.app.SearchPageActivity
+import com.kamina.app.SeriesActivity
 import com.kamina.app.api.ApiService
+import com.kamina.app.api.UserApiHelper
 import com.kamina.app.api.UserIconResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import androidx.compose.ui.platform.LocalConfiguration
-import com.kamina.app.HomePageActivity
-import com.kamina.app.LoginActivity
-import com.kamina.app.R
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.draw.blur
-
-@Preview(showBackground = true)
-@Composable
-fun NavbarPreview() {
-    Navbar(navController = rememberNavController())
-}
 
 @Composable
-fun Navbar(navController: NavHostController = rememberNavController()) {
+fun Navbar(navController: NavHostController, avatarChanged: Boolean) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     // Retrieve the userId from SharedPreferences
-    val sharedPreferences: SharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
     val userId = sharedPreferences.getString("userId", null)
 
     // Fetch user icon if userId is not null
     var userIconUrl by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(userId) {
+    // Re-fetch user icon when avatarChanged is toggled
+    LaunchedEffect(userId, avatarChanged) {
         userId?.let {
-            fetchUserIcon(it) { iconUrl ->
+            // Use the UserApiHelper to fetch the user icon
+            UserApiHelper.fetchUserIcon(it) { iconUrl ->
                 userIconUrl = iconUrl
             }
         }
@@ -86,18 +76,19 @@ fun Navbar(navController: NavHostController = rememberNavController()) {
     ) {
         // Left Skull Icon (Navigate to Home)
         Image(
-            painter = painterResource(id = R.drawable.skull), // Skull icon from drawable
+            painter = painterResource(id = R.drawable.skull),
             contentDescription = "Home",
             modifier = Modifier
                 .size(50.dp)
                 .clickable {
-                    navController.navigate("home")
+                    // Direct Intent to HomePageActivity (Activity navigation)
+                    val intent = Intent(context, HomePageActivity::class.java)
+                    context.startActivity(intent)
                 }
         )
 
         // Right User Icon with Dropdown Menu
         Box {
-            val screenWidth = LocalConfiguration.current.screenWidthDp.dp
             Image(
                 painter = painter, // Coil painter to load user icon
                 contentDescription = "User Menu",
@@ -109,56 +100,60 @@ fun Navbar(navController: NavHostController = rememberNavController()) {
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                properties = PopupProperties(focusable = true),
-                modifier = Modifier
-                    .width(120.dp)
-                    .blur (radiusX = 15.dp, radiusY = 15.dp)
+                modifier = Modifier.width(120.dp)
             ) {
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        // Handle home navigation
+                        // Direct Intent to HomePageActivity
                         val intent = Intent(context, HomePageActivity::class.java)
                         context.startActivity(intent)
-                        (context as? Activity)?.finishAffinity()
                     },
                     text = { Text("Home") }
                 )
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        navController.navigate("series")
+                        val intent = Intent(context, SeriesActivity::class.java)
+                        context.startActivity(intent)
+                        (context as? Activity)?.finishAffinity()
                     },
                     text = { Text("Series") }
                 )
+
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        navController.navigate("movies")
+                        val intent = Intent(context, MoviesActivity::class.java)
+                        context.startActivity(intent)
+                        (context as? Activity)?.finishAffinity()
                     },
                     text = { Text("Movies") }
                 )
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        navController.navigate("search")
+                        val intent = Intent(context, SearchPageActivity::class.java)
+                        context.startActivity(intent)
+                        (context as? Activity)?.finishAffinity()
                     },
                     text = { Text("Search") }
                 )
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        navController.navigate("configuration")
+                        val intent = Intent(context, ConfigurationActivity::class.java)
+                        context.startActivity(intent)
+                        (context as? Activity)?.finishAffinity()
                     },
                     text = { Text("Configuration") }
                 )
                 DropdownMenuItem(
                     onClick = {
                         expanded = false
-                        // Handle logout
+                        // Direct Intent to LoginActivity (for logout)
                         val intent = Intent(context, LoginActivity::class.java)
                         context.startActivity(intent)
-                        (context as? Activity)?.finishAffinity()
                     },
                     text = { Text("Logout") }
                 )
@@ -166,6 +161,8 @@ fun Navbar(navController: NavHostController = rememberNavController()) {
         }
     }
 }
+
+
 
 // Function to fetch the user icon from the backend
 fun fetchUserIcon(userId: String, onResult: (String?) -> Unit) {

@@ -6,22 +6,27 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.kamina.app.api.EntityResponse
 import com.kamina.app.api.fetchEntities
-import com.kamina.app.ui.theme.GradientBackground
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.graphics.Color
 import com.kamina.app.ui.theme.KaminaAppTheme
 
 class HomePageActivity : ComponentActivity() {
@@ -34,83 +39,50 @@ class HomePageActivity : ComponentActivity() {
 
         setContent {
             KaminaAppTheme {
-                GradientBackground {  // Use the GradientBackground composable directly
-                    if (userId != null) {
-                        HomePage() // Display homepage content
-                    } else {
-                        Text("Error: User not logged in")
-                    }
-                    }
-                }
-            }
-        }
-
-        @Composable
-        fun HomePage() {
-            var entities by remember { mutableStateOf<List<EntityResponse>?>(null) }
-            val listState = rememberLazyListState()
-            var currentIndex by remember { mutableStateOf(0) }
-            var isUserInteracting by remember { mutableStateOf(false) }
-            val coroutineScope = rememberCoroutineScope()
-
-            LaunchedEffect(Unit) {
-                fetchEntities { response ->
-                    entities = response
-                }
-            }
-
-            LaunchedEffect(entities) {
-                if (entities != null && entities!!.isNotEmpty()) {
-                    coroutineScope.launch {
-                        while (true) {
-                            delay(7000L)
-                            if (!isUserInteracting) {
-                                currentIndex = (currentIndex + 1) % entities!!.size
-                                listState.scrollToItem(currentIndex)
-                            }
-                        }
-                    }
-                }
-            }
-
-            LaunchedEffect(listState.isScrollInProgress) {
-                if (listState.isScrollInProgress) {
-                    isUserInteracting = true
+                if (userId != null) {
+                    val navController = rememberNavController()
+                    HomePage(userId = userId, navController = navController)
                 } else {
-                    coroutineScope.launch {
-                        delay(5000L)
-                        isUserInteracting = false
-                    }
-                    currentIndex = listState.firstVisibleItemIndex
-                    listState.scrollToItem(currentIndex)
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(2.dp)
-                    .background(Color.Transparent),
-                verticalArrangement = Arrangement.Top
-            ) {
-                Navbar()  // Check if Navbar itself has padding inside
-
-                Spacer(modifier = Modifier.height(0.dp))
-
-                // Carousel content
-                entities?.let {
-                    LazyRow(
-                        state = listState,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        itemsIndexed(it) { index, entity ->
-                            val nextEntity = if (index + 1 < it.size) it[index + 1] else null
-                            CarouselItem(entity = entity, nextEntity = nextEntity)
-                        }
-                    }
-                } ?: run {
-                    Text("Loading...", modifier = Modifier.align(Alignment.CenterHorizontally))
+                    Text("Error: User not logged in")
                 }
             }
         }
     }
+}
+
+@Composable
+fun HomePage(userId: String, navController: NavHostController) {
+    var entities by remember { mutableStateOf<List<EntityResponse>?>(null) }
+
+    // Fetch entities for the carousel
+    LaunchedEffect(Unit) {
+        fetchEntities { response ->
+            entities = response
+        }
+    }
+
+    // Scaffold with top Navbar
+    Scaffold(
+        topBar = { Navbar(navController = navController, avatarChanged = false) },
+        content = { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)  // Apply paddingValues here
+                    .background(Color.Transparent),
+                verticalArrangement = Arrangement.Top
+            ) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Pass the entities to CombinedSections
+                entities?.let {
+                    CombinedSections(userId = userId, entities = it)
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+    )
+
+}
+

@@ -23,5 +23,6 @@ interface ApiService {
     fun getEntities(): Call<List<EntityResponse>>
 
 
+
 }
 

@@ -1,31 +1,37 @@
 package com.kamina.app
 
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
 import android.view.View
-import android.widget.*
+import android.view.ViewGroup
+import android.view.WindowInsets
+import android.view.WindowInsetsController
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Spinner
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.kamina.app.api.ApiService
-import com.kamina.app.api.UsernameResponse
 import com.kamina.app.api.LoginRequest
 import com.kamina.app.api.LoginResponse
 import com.kamina.app.api.PinLoginRequest
+import com.kamina.app.api.UsernameResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import android.util.Log
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.WindowInsets
-import android.view.WindowInsetsController
-import android.view.WindowManager
-import android.graphics.Color  // For setting text colors
-import android.view.ViewGroup
-import android.content.Context
-import android.content.SharedPreferences
 
 class LoginActivity : AppCompatActivity() {
 
@@ -320,9 +326,11 @@ class LoginActivity : AppCompatActivity() {
 
     private fun navigateToHomePage() {
         val intent = Intent(this, HomePageActivity::class.java)
+        intent.putExtra("userId", sharedPreferences.getString("userId", null))
         startActivity(intent)
         finish()
     }
+
 
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
