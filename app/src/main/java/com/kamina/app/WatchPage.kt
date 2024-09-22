@@ -1,5 +1,7 @@
 package com.kamina.app
 
+import android.webkit.WebSettings
+import android.webkit.WebView
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.kamina.app.api.fetchWatchPageEpisode
 import com.kamina.app.api.fetchWatchPageUserProgress
 import com.kamina.app.api.fetchNextEpisode
@@ -71,8 +75,22 @@ fun WatchPage(entityId: Int, season: Int, episode: Int, userId: Int) {
 // Simplified video player for demonstration
 @Composable
 fun VideoPlayer(filePath: String) {
-    Text(text = "Playing video from $filePath")
+    val webView = WebView(LocalContext.current).apply {
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.mediaPlaybackRequiresUserGesture = false
+        settings.loadWithOverviewMode = true
+        settings.useWideViewPort = true
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
+        loadUrl(filePath)  // This assumes the filePath is a URL for an embedded video
+    }
+
+    AndroidView(
+        factory = { webView },
+        modifier = Modifier.fillMaxSize()
+    )
 }
+
 
 // Simplified continue handling for demonstration
 fun handleContinue(currentEpisode: WatchPageEpisode, nextEpisode: WatchPageEpisode?) {
