@@ -80,7 +80,7 @@ fun DetailPageEpisodesTab(
                         modifier = Modifier
                             .padding(8.dp)
                             .clickable {
-                                val intent = Intent(context, WatchActivity::class.java).apply {
+                                val intent = Intent(context, WatchPageActivity::class.java).apply {
                                     putExtra("season", episode.season)
                                     putExtra("episode", episode.episode)
                                 }

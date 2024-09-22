@@ -114,7 +114,7 @@ class LoginActivity : AppCompatActivity() {
 
     private fun fetchUsernames() {
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.kaminajp.com")
+            .baseUrl("https://api.kaminajp.com")  // Ensure this is the correct base URL
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
@@ -123,20 +123,22 @@ class LoginActivity : AppCompatActivity() {
         api.getUsernames().enqueue(object : Callback<List<UsernameResponse>> {
             override fun onResponse(call: Call<List<UsernameResponse>>, response: Response<List<UsernameResponse>>) {
                 if (response.isSuccessful) {
-                    // Extract the usernames from the response
                     val usernames = response.body()?.map { it.username } ?: emptyList()
                     Log.d("LoginActivity", "Usernames fetched: $usernames")
                     populateUsernameDropdown(usernames)
                 } else {
+                    Log.e("LoginActivity", "Failed to fetch usernames: ${response.errorBody()?.string()}")
                     showError("Failed to fetch usernames: ${response.message()}")
                 }
             }
 
             override fun onFailure(call: Call<List<UsernameResponse>>, t: Throwable) {
+                Log.e("LoginActivity", "Error fetching usernames: ${t.message}")
                 showError("Error fetching usernames: ${t.message}")
             }
         })
     }
+
 
     private fun populateUsernameDropdown(usernames: List<String>) {
         // Add "Select Username" as the first item

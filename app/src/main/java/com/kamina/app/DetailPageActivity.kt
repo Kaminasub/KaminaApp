@@ -7,14 +7,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
 import com.kamina.app.ui.theme.KaminaAppTheme
 
-
 class DetailPageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Retrieve entityId from intent
+        // Retrieve entityId and userId from intent
         val entityId = intent?.getIntExtra("entityId", 0) ?: 0
-        Log.d("DetailPageActivity", "Received entityId: $entityId")
+        val userId = intent?.getIntExtra("userId", 0) ?: 0 // Assuming userId is passed as well
+        Log.d("DetailPageActivity", "Received entityId: $entityId, userId: $userId")
 
         if (entityId == 0) {
             Log.e("DetailPageActivity", "Invalid entityId, stopping activity.")
@@ -24,10 +24,10 @@ class DetailPageActivity : ComponentActivity() {
                 }
             }
         } else {
-            // Load detail page content
+            // Load detail page content and pass the entityId and userId to DetailPageScreen
             setContent {
                 KaminaAppTheme {
-                    DetailPageScreen(entityId = entityId)
+                    DetailPageScreen(entityId = entityId, userId = userId)  // Pass both entityId and userId to the composable
                 }
             }
         }
