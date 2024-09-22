@@ -1,28 +1,27 @@
-package com.kamina.app.ui
+package com.kamina.app
 
 import android.content.Intent
-import android.os.Bundle
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.Button
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.util.Log
 import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 @Composable
-fun PlayButton(navController: NavController) {
+fun PlayButton(entityId: Int, isMovie: Int, videoFilePath: String?, userId: Int) {
     val context = LocalContext.current
+
     Button(onClick = {
-        // Start EmbeddedVideoPage for testing
-        val intent = Intent(context, EmbeddedVideoPage::class.java)
-        context.startActivity(intent)
+        if (videoFilePath != null && isMovie == 1) {
+            Log.d("PlayButton", "Starting WatchPageActivity for movie")
+            val intent = Intent(context, WatchPageActivity::class.java).apply {
+                putExtra("videoUrl", videoFilePath)
+            }
+            context.startActivity(intent)
+        } else {
+            Log.d("PlayButton", "Video file path is missing or not for a movie")
+        }
     }) {
-        BasicText("Play Movie (Test)")
+        Text(text = "Play Movie")
     }
 }

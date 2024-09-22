@@ -37,19 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
-import com.kamina.app.api.CastMember
-import com.kamina.app.api.EntityDetail
-import com.kamina.app.api.Episode
-import com.kamina.app.api.Season
-import com.kamina.app.api.Suggestion
-import com.kamina.app.api.WatchPageEpisode
-import com.kamina.app.api.fetchCast
-import com.kamina.app.api.fetchEntityDetails
-import com.kamina.app.api.fetchEpisodes
-import com.kamina.app.api.fetchSuggestions
-import com.kamina.app.api.fetchWatchPageEpisode
-import com.kamina.app.api.getMovieDetails
-import com.kamina.app.ui.PlayButton
+import com.kamina.app.api.*
 import kotlinx.coroutines.launch
 
 @Composable

@@ -1,21 +1,24 @@
 package com.kamina.app
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.kamina.app.ui.EmbeddedVideoPage
 import com.kamina.app.ui.theme.KaminaAppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setFullScreenMode() // Keep immersive mode as you already have
+        // Enable immersive full-screen mode using WindowInsetsController
+        setFullScreenMode()
 
         setContent {
             KaminaAppTheme {
@@ -25,6 +28,7 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") {
+                        val userId = "userIdPlaceholder"
                         HomePage(userId = userId, navController = navController)
                     }
                     composable("series") { SeriesPage() }
@@ -36,19 +40,37 @@ class MainActivity : ComponentActivity() {
                     composable("detailpage/{entityId}/{userId}") { backStackEntry ->
                         val entityId = backStackEntry.arguments?.getString("entityId")?.toIntOrNull() ?: 0
                         val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: 0
+
                         DetailPageScreen(entityId = entityId, userId = userId)
-                    }
-                    // New composable for embedding video
-                    composable("embedVideoPage") {
-                        EmbeddedVideoPage() // Load the video in this screen
                     }
                 }
             }
         }
     }
 
+    // Reapply immersive mode when the app regains focus
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            setFullScreenMode()
+        }
+    }
+
     private fun setFullScreenMode() {
-        // Keeping your full-screen implementation as is
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val controller = window.insetsController
+            if (controller != null) {
+                controller.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    )
+        }
     }
 }

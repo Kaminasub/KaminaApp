@@ -16,11 +16,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.kamina.app.api.WatchPageEpisode
-import com.kamina.app.api.WatchPageUserProgress
-import com.kamina.app.api.fetchNextEpisode
 import com.kamina.app.api.fetchWatchPageEpisode
 import com.kamina.app.api.fetchWatchPageUserProgress
+import com.kamina.app.api.fetchNextEpisode
+import com.kamina.app.api.WatchPageEpisode
+import com.kamina.app.api.WatchPageUserProgress
 import kotlinx.coroutines.launch
 
 @Composable

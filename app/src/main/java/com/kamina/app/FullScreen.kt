@@ -7,6 +7,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Dialog
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 
 @Composable
 fun FullScreenMoviePopup(filePath: String, onClose: () -> Unit) {
@@ -25,3 +29,24 @@ fun FullScreenMoviePopup(filePath: String, onClose: () -> Unit) {
         }
     }
 }
+
+
+
+@Composable
+fun FullScreenWebView(filePath: String) {
+    // Creating the WebView inside Jetpack Compose
+    AndroidView(factory = { context ->
+        WebView(context).apply {
+            webViewClient = WebViewClient()
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.mediaPlaybackRequiresUserGesture = false
+            settings.loadWithOverviewMode = true
+            settings.useWideViewPort = true
+            settings.cacheMode = WebSettings.LOAD_DEFAULT
+
+            loadUrl(filePath)
+        }
+    })
+}
+
