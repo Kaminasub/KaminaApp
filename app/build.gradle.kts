@@ -83,9 +83,14 @@ dependencies {
 
     // ExoPlayer
     implementation("com.google.android.exoplayer:exoplayer:2.18.3")
+    implementation ("com.google.android.exoplayer:exoplayer-core:2.18.3")
+    implementation ("com.google.android.exoplayer:exoplayer-hls:2.18.3")
+    implementation ("com.google.android.exoplayer:exoplayer-dash:2.18.3")
     implementation("androidx.media3:media3-exoplayer:1.0.1")
     implementation("org.videolan.android:libvlc-all:3.3.13")
-    implementation(libs.androidx.webkit)
+    implementation("androidx.webkit:webkit:1.8.0")
+    implementation ("androidx.browser:browser:1.3.0")
+
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

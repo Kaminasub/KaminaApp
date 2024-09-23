@@ -1,86 +1,71 @@
 package com.kamina.app
 
 import android.annotation.SuppressLint
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.View
-import android.webkit.PermissionRequest
+import android.view.WindowManager
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.webkit.WebSettingsCompat
-import androidx.webkit.WebViewFeature
-import com.kamina.app.ui.theme.KaminaAppTheme
 
 class WatchPageActivity : ComponentActivity() {
 
+    private lateinit var webView: WebView
+
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val videoUrl = intent.getStringExtra("videoUrl") ?: ""
 
-        setContent {
-            KaminaAppTheme {
-                WatchPageScreen(videoUrl)
+        // Set the activity to full-screen landscape mode
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+        // Enable full-screen immersive mode
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
+
+        // Create a WebView
+        webView = WebView(this)
+        setContentView(webView)
+
+        // Configure WebView settings
+        val webSettings: WebSettings = webView.settings
+        webSettings.javaScriptEnabled = true
+        webSettings.domStorageEnabled = true
+        webSettings.mediaPlaybackRequiresUserGesture = false
+
+        // Enable full-screen video
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                // Enter full-screen mode when playing video
+                view.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+                setContentView(view)
+            }
+
+            override fun onHideCustomView() {
+                // Exit full-screen mode when video is done
+                setContentView(webView)
             }
         }
+
+        // Handle redirects inside the WebView
+        webView.webViewClient = WebViewClient()
+
+        // Load the video URL passed from the previous activity
+        val videoUrl = intent.getStringExtra("videoUrl") ?: ""
+        webView.loadUrl(videoUrl)
     }
-}
 
-@Composable
-fun WatchPageScreen(videoUrl: String) {
-    WebViewContainer(videoUrl)
-}
-
-@Suppress("RedundantOverride")
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun WebViewContainer(videoUrl: String) {
-    val webView = WebView(LocalContext.current).apply {
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        settings.mediaPlaybackRequiresUserGesture = false
-        settings.allowFileAccess = true
-        settings.allowContentAccess = true
-        settings.loadWithOverviewMode = true
-        settings.useWideViewPort = true
-        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW  // Allow mixed content
-        setLayerType(View.LAYER_TYPE_HARDWARE, null)  // Hardware acceleration
-
-        // Clear cache and history to avoid stale content
-        clearCache(true)
-        clearHistory()
-
-        // Check for dark mode support and disable it if supported
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-            WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_OFF)
+    // Handle back press to ensure WebView can navigate back
+    override fun onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
         }
-    }
-
-    webView.webViewClient = object : WebViewClient() {
-        override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-            // Handle errors if needed
-        }
-    }
-
-    webView.webChromeClient = object : WebChromeClient() {
-        override fun onPermissionRequest(request: PermissionRequest?) {
-            request?.grant(request.resources)
-        }
-    }
-
-    AndroidView(
-        factory = { webView },
-        modifier = Modifier.fillMaxSize()
-    ) {
-        it.loadUrl(videoUrl)
     }
 }
