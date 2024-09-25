@@ -90,6 +90,8 @@ dependencies {
     implementation("org.videolan.android:libvlc-all:3.3.13")
     implementation("androidx.webkit:webkit:1.8.0")
     implementation ("androidx.browser:browser:1.3.0")
+    implementation(libs.filament.android)
+    implementation(libs.androidx.benchmark.macro)
 
 
     testImplementation("junit:junit:4.13.2")

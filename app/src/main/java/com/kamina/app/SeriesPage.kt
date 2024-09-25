@@ -34,7 +34,7 @@ import com.kamina.app.api.SeriesCategoryResponse
 import com.kamina.app.api.fetchSeriesByCategory
 
 @Composable
-fun SeriesPage() {
+fun SeriesPage(userId: Int) {
     var seriesCategories by remember { mutableStateOf<List<SeriesCategoryResponse>?>(null) }
 
     // Fetch series categories from the API
@@ -48,8 +48,8 @@ fun SeriesPage() {
     seriesCategories?.let { seriesCategoryList ->
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(seriesCategoryList) { category ->
-                // Display each series category
-                SeriesCategorySection(category = category)
+                // Display each series category and pass userId
+                SeriesCategorySection(category = category, userId = userId)
             }
         }
     } ?: run {
@@ -59,7 +59,7 @@ fun SeriesPage() {
 }
 
 @Composable
-fun SeriesCategorySection(category: SeriesCategoryResponse) {
+fun SeriesCategorySection(category: SeriesCategoryResponse, userId: Int) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Display the category name
         Text(
@@ -77,7 +77,7 @@ fun SeriesCategorySection(category: SeriesCategoryResponse) {
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             items(category.entities) { entity ->
-                SeriesThumbnailItem(thumbnailUrl = entity.thumbnail, entityId = entity.id)  // Pass entityId to the item
+                SeriesThumbnailItem(thumbnailUrl = entity.thumbnail, entityId = entity.id, userId = userId)  // Pass userId
             }
         }
 
@@ -86,7 +86,7 @@ fun SeriesCategorySection(category: SeriesCategoryResponse) {
 }
 
 @Composable
-fun SeriesThumbnailItem(thumbnailUrl: String, entityId: Int) {
+fun SeriesThumbnailItem(thumbnailUrl: String, entityId: Int, userId: Int) {
     val context = LocalContext.current  // Get current context for navigation
 
     Image(
@@ -102,6 +102,7 @@ fun SeriesThumbnailItem(thumbnailUrl: String, entityId: Int) {
                 // Navigate to DetailPageActivity when thumbnail is clicked
                 val intent = Intent(context, DetailPageActivity::class.java).apply {
                     putExtra("entityId", entityId)  // Pass the entityId to the DetailPageActivity
+                    putExtra("userId", userId)      // Pass the userId to the DetailPageActivity
                 }
                 context.startActivity(intent)
             },

@@ -7,7 +7,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -28,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -37,7 +43,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
-import com.kamina.app.api.*
+import com.kamina.app.api.CastMember
+import com.kamina.app.api.EntityDetail
+import com.kamina.app.api.Episode
+import com.kamina.app.api.Season
+import com.kamina.app.api.Suggestion
+import com.kamina.app.api.UserProgress
+import com.kamina.app.api.WatchPageEpisode
+import com.kamina.app.api.fetchCast
+import com.kamina.app.api.fetchEntityDetails
+import com.kamina.app.api.fetchEpisodes
+import com.kamina.app.api.fetchSeasons
+import com.kamina.app.api.fetchSuggestions
+import com.kamina.app.api.fetchUserEntityStatus
+import com.kamina.app.api.fetchUserProgress
+import com.kamina.app.api.getMovieDetails
+import com.kamina.app.api.getStatusText
+import com.kamina.app.api.updateUserStatus
 import kotlinx.coroutines.launch
 
 @Composable
@@ -50,27 +72,53 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
     var episodes by remember { mutableStateOf<List<Episode>>(emptyList()) }
     var selectedSeason by remember { mutableStateOf<Int?>(null) }
     var activeTab by remember { mutableStateOf("EPISODES") }
-    var video by remember { mutableStateOf<WatchPageEpisode?>(null) } // Updated to use WatchPageEpisode
+    var video by remember { mutableStateOf<WatchPageEpisode?>(null) }
+    var selectedStatus by remember { mutableStateOf<Int?>(null) }  // Nullable to avoid premature defaulting
+    var expanded by remember { mutableStateOf(false) }
+    val statusOptions = listOf(1 to "Following", 2 to "Completed")
     val coroutineScope = rememberCoroutineScope()
+    var currentEpisode by remember { mutableStateOf<Episode?>(null) }
+    var userProgress by remember { mutableStateOf<UserProgress?>(null) }
 
-    // Fetch entity details, cast, suggestions, and seasons if series
+    // Fetch entity details, cast, suggestions, seasons, and status if series
     LaunchedEffect(entityId) {
         coroutineScope.launch {
-            Log.d("DetailPage", "Fetching entity details for entityId: $entityId")
+            // Fetch entity details, cast, and suggestions
             entity = fetchEntityDetails(entityId)
-            Log.d("DetailPage", "Fetched entity: $entity")
-
             cast = fetchCast(entityId) ?: emptyList()
             suggestions = fetchSuggestions(entityId) ?: emptyList()
 
             if (entity?.isMovie == 1) {
-                Log.d("DetailPage", "Fetching movie details for entityId: $entityId")
                 video = getMovieDetails(entityId)
-                Log.d("DetailPage", "Fetched movie: $video")
+                currentEpisode = null // No episodes for movies
             } else {
-                Log.d("DetailPage", "Fetching episode for entityId: $entityId, season: 1, episode: 1")
-                video = fetchWatchPageEpisode(entityId, season = 1, episode = 1)
-                Log.d("DetailPage", "Fetched video: $video")
+                seasons = fetchSeasons(entityId) ?: emptyList()
+
+                if (seasons.isNotEmpty()) {
+                    selectedSeason = seasons.first().season
+                    episodes = fetchEpisodes(entityId, selectedSeason!!) ?: emptyList()
+
+                    // Fetch user progress for series
+                    userProgress = fetchUserProgress(userId, entityId)
+                    userProgress?.let { progress ->
+                        selectedSeason = progress.currentSeason ?: seasons.firstOrNull()?.season
+                        episodes = fetchEpisodes(entityId, selectedSeason!!) ?: emptyList()
+
+                        currentEpisode = episodes.firstOrNull { it.episode == progress.currentEpisode }
+                            ?: episodes.firstOrNull() // Default to first episode if no progress found
+                    } ?: run {
+                        currentEpisode = episodes.firstOrNull() // Default to the first episode
+                    }
+                }
+
+                // Log to help debug episodes fetching
+                Log.d("DetailPage", "Fetched episodes: $episodes, currentEpisode: $currentEpisode")
+            }
+
+            // Fetch current status for the user and entity
+            fetchUserEntityStatus(userId, entityId) { result ->
+                selectedStatus = result?.status ?: 0  // Default to 0 if no status is found
+                Log.d("DetailPage", "Fetched status: $selectedStatus")
             }
         }
     }
@@ -114,13 +162,63 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                         modifier = Modifier.padding(8.dp)
                     )
 
-                    // Add PlayButton under logo/name, pass the userId dynamically
-                    PlayButton(
-                        entityId = entityDetail.id,       // Pass the correct entity ID
-                        isMovie = entityDetail.isMovie,   // Pass whether it's a movie or series
-                        videoFilePath = video?.filePath,  // Ensure video is fetched correctly, then pass its filePath
-                        userId = userId                   // Pass the actual user ID
-                    )
+                    // Display episode information before the PlayButton (only for series)
+                    if (entityDetail.isMovie == 0) {
+                        currentEpisode?.let { episode ->
+                            Text(
+                                text = "S${episode.season}E${episode.episode}: ${episode.title}",
+                                fontSize = 18.sp,
+                                color = Color.White,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+
+                    // PlayButton and Status Dropdown in the same row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // PlayButton on the left
+                        PlayButton(
+                            entityId = entityDetail.id,
+                            isMovie = entityDetail.isMovie,
+                            videoFilePath = video?.filePath,
+                            userId = userId,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Status Dropdown on the right
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 16.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Button(onClick = { expanded = !expanded }) {
+                                Text(text = "Status: ${getStatusText(selectedStatus ?: 0)}")
+                            }
+
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                statusOptions.forEach { (statusCode, statusText) ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = statusText) },
+                                        onClick = {
+                                            selectedStatus = statusCode
+                                            expanded = false
+                                            // Call the API to update user status
+                                            updateUserStatus(userId, entityDetail.id, statusCode)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     // Tabs Section
                     TabRow(selectedTabIndex = when (activeTab) {
@@ -149,21 +247,45 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                     // Tab Content
                     when (activeTab) {
                         "EPISODES" -> {
-                            if (entityDetail.isMovie == 0 && seasons.isNotEmpty()) {
+                            if (entityDetail.isMovie == 0) {
+                                // Fetch seasons if needed
+                                LaunchedEffect(entityId) {
+                                    if (seasons.isEmpty()) {
+                                        coroutineScope.launch {
+                                            Log.d("DetailPage", "Fetching seasons for entityId: $entityId")
+                                            seasons = fetchSeasons(entityId) ?: emptyList()
+                                            Log.d("DetailPage", "Fetched seasons: $seasons")
+                                        }
+                                    }
+                                }
+
+                                // Fetch episodes when a season is selected
+                                selectedSeason?.let { season ->
+                                    coroutineScope.launch {
+                                        Log.d("DetailPage", "Fetching episodes for entityId: $entityId, season: $season")
+                                        episodes = fetchEpisodes(entityId, season) ?: emptyList()
+                                        Log.d("DetailPage", "Fetched episodes: $episodes")
+                                    }
+                                }
+
+                                // Render the Episodes tab with seasons and episodes, passing userId
                                 DetailPageEpisodesTab(
                                     entityDetail = entityDetail,
                                     seasons = seasons,
                                     episodes = episodes,
+                                    userId = userId,
                                     onSeasonSelected = { season ->
                                         coroutineScope.launch {
                                             selectedSeason = season
-                                            // Fetch episodes for the selected season
+                                            Log.d("DetailPage", "Season selected: $season. Fetching episodes for entityId: $entityId")
                                             episodes = fetchEpisodes(entityId, season) ?: emptyList()
+                                            Log.d("DetailPage", "Fetched episodes for season $season: $episodes")
                                         }
                                     }
                                 )
                             }
                         }
+
                         "SUGGESTIONS" -> {
                             val context = LocalContext.current
 
@@ -184,6 +306,7 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                                                 .clickable {
                                                     val intent = Intent(context, DetailPageActivity::class.java).apply {
                                                         putExtra("entityId", suggestion.id)
+                                                        putExtra("userId", userId)  // Pass userId to suggestions
                                                     }
                                                     context.startActivity(intent)
                                                 },
@@ -220,6 +343,7 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                                             color = Color.White,
                                             fontSize = 16.sp
                                         )
+
                                         Text(
                                             text = actor.character_name.replace(" ", "\n"),
                                             color = Color.Gray,
@@ -229,6 +353,7 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                                 }
                             }
                         }
+
                         "DETAILS" -> {
                             entity?.let { entityDetail ->
                                 Column(

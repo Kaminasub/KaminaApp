@@ -39,6 +39,7 @@ fun DetailPageEpisodesTab(
     entityDetail: EntityDetail,
     seasons: List<Season>,
     episodes: List<Episode>,
+    userId: Int,  // Add userId as a parameter to pass from DetailPageScreen
     onSeasonSelected: (Int) -> Unit
 ) {
     var selectedSeason by remember { mutableStateOf<Int?>(null) }
@@ -47,7 +48,7 @@ fun DetailPageEpisodesTab(
 
     if (entityDetail.isMovie == 0 && seasons.isNotEmpty()) {
         Column {
-            Box(modifier = Modifier.padding(16.dp)) {
+            Box(modifier = Modifier.padding(10.dp)) {
                 Button(onClick = { expanded = !expanded }) {
                     Text(
                         text = selectedSeason?.let { "Season $it" } ?: "Select a Season",
@@ -59,9 +60,9 @@ fun DetailPageEpisodesTab(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-                    seasons.forEach { season ->  // Ensure this is a valid iteration over a list of Season objects
+                    seasons.forEach { season ->
                         DropdownMenuItem(
-                            text = {  // Use the `text` parameter for proper usage
+                            text = {
                                 Text(text = "Season ${season.season}")
                             },
                             onClick = {
@@ -75,28 +76,37 @@ fun DetailPageEpisodesTab(
             }
 
             // Display Episodes if a season is selected
-            LazyRow(modifier = Modifier.padding(16.dp)) {
+            LazyRow(modifier = Modifier.padding(10.dp)) {
                 items(episodes) { episode ->
                     Column(
                         modifier = Modifier
-                            .padding(8.dp)
+                            .padding(0.dp)
                             .clickable {
-                                val intent = Intent(context, WatchPageActivity::class.java).apply {
+                                val intent = Intent(context, WatchPage::class.java).apply {  // Use WatchPage instead of WatchPageActivity
                                     putExtra("season", episode.season)
                                     putExtra("episode", episode.episode)
+                                    putExtra("entityId", entityDetail.id)  // Pass entityId to WatchPage
+                                    putExtra("userId", userId)  // Pass userId to WatchPage
                                 }
                                 context.startActivity(intent)
                             }
                     ) {
+                        // If miniatura is null or empty, use the wall image from entityDetail
+                        val imageUrl = if (episode.miniatura.isNullOrEmpty()) {
+                            entityDetail.wall
+                        } else {
+                            episode.miniatura
+                        }
+
                         Image(
-                            painter = rememberAsyncImagePainter(episode.miniatura),
+                            painter = rememberAsyncImagePainter(imageUrl),
                             contentDescription = null,
                             modifier = Modifier
                                 .size(150.dp)
                                 .clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Crop
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(0.dp))
                         Text(
                             text = "S${episode.season} E${episode.episode}: ${episode.title}",
                             color = Color.White,
@@ -114,3 +124,7 @@ fun DetailPageEpisodesTab(
         }
     }
 }
+
+
+
+

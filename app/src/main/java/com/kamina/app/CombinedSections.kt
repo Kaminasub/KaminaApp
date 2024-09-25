@@ -49,7 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun CombinedSections(userId: String, entities: List<EntityResponse>) {
+fun CombinedSections(userId: Int, entities: List<EntityResponse>) {
     var continueWatchingThumbnails by remember { mutableStateOf<List<ThumbnailData>?>(null) }
     var categories by remember { mutableStateOf<List<CategoryResponse>?>(null) }
     var isLoadingContinue by remember { mutableStateOf(true) }
@@ -60,10 +60,10 @@ fun CombinedSections(userId: String, entities: List<EntityResponse>) {
     var isUserInteracting by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Fetch "Continue Watching" content
+    // Fetch "Continue Watching" content and filter only those with status = 1 (following)
     LaunchedEffect(userId) {
-        fetchContinueWatching(userId) { result ->
-            continueWatchingThumbnails = result
+        fetchContinueWatching(userId.toString()) { result ->
+            continueWatchingThumbnails = result?.filter { it.status == 1 }  // Filter to show only following status
             isLoadingContinue = false
         }
     }
@@ -118,13 +118,13 @@ fun CombinedSections(userId: String, entities: List<EntityResponse>) {
             ) {
                 itemsIndexed(entities) { index, entity ->
                     val nextEntity = if (index + 1 < entities.size) entities[index + 1] else null
-                    CarouselItem(entity = entity, nextEntity = nextEntity)
+                    CarouselItem(entity = entity, nextEntity = nextEntity, userId = userId)
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // Section: Continue Watching
+        // Section: Continue Watching (filtered to show only following status)
         item {
             if (!continueWatchingThumbnails.isNullOrEmpty()) {
                 Text(
@@ -138,7 +138,7 @@ fun CombinedSections(userId: String, entities: List<EntityResponse>) {
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     items(continueWatchingThumbnails!!) { thumbnail ->
-                        CombinedThumbnailItem(thumbnail.thumbnail, thumbnail.id) // Pass entityId
+                        CombinedThumbnailItem(thumbnail.thumbnail, thumbnail.id, userId) // Pass entityId and userId
                     }
                 }
                 Spacer(modifier = Modifier.height(20.dp))
@@ -155,7 +155,7 @@ fun CombinedSections(userId: String, entities: List<EntityResponse>) {
         // Section: Categories
         if (!categories.isNullOrEmpty()) {
             items(categories!!) { category ->
-                CombinedCategorySection(category = category)
+                CombinedCategorySection(category = category, userId = userId)
             }
         } else if (isLoadingCategories) {
             item {
@@ -170,9 +170,10 @@ fun CombinedSections(userId: String, entities: List<EntityResponse>) {
     }
 }
 
+
 // CarouselItem with click action to navigate to DetailPageActivity
 @Composable
-fun CarouselItem(entity: EntityResponse, nextEntity: EntityResponse?) {
+fun CarouselItem(entity: EntityResponse, nextEntity: EntityResponse?, userId: Int) {
     val context = LocalContext.current
 
     Box(
@@ -182,6 +183,7 @@ fun CarouselItem(entity: EntityResponse, nextEntity: EntityResponse?) {
             .clickable {
                 val intent = Intent(context, DetailPageActivity::class.java).apply {
                     putExtra("entityId", entity.id)
+                    putExtra("userId", userId) // Pass the userId as Int
                 }
                 ContextCompat.startActivity(context, intent, null)
             }
@@ -227,7 +229,7 @@ fun CarouselItem(entity: EntityResponse, nextEntity: EntityResponse?) {
 
 // CombinedThumbnailItem with click action to navigate to DetailPageActivity
 @Composable
-fun CombinedThumbnailItem(thumbnailUrl: String, entityId: Int) {
+fun CombinedThumbnailItem(thumbnailUrl: String, entityId: Int, userId: Int) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
     Image(
@@ -242,8 +244,9 @@ fun CombinedThumbnailItem(thumbnailUrl: String, entityId: Int) {
             .clickable {
                 val intent = Intent(context, DetailPageActivity::class.java).apply {
                     putExtra("entityId", entityId) // Pass the correct entityId
+                    putExtra("userId", userId) // Pass the userId as Int
                 }
-                Log.d("CombinedThumbnailItem", "Thumbnail clicked with entityId: $entityId")
+                Log.d("CombinedThumbnailItem", "Thumbnail clicked with entityId: $entityId, userId: $userId")
                 ContextCompat.startActivity(context, intent, null)
             },
         contentScale = ContentScale.Crop
@@ -252,7 +255,7 @@ fun CombinedThumbnailItem(thumbnailUrl: String, entityId: Int) {
 
 // CombinedCategorySection
 @Composable
-fun CombinedCategorySection(category: CategoryResponse) {
+fun CombinedCategorySection(category: CategoryResponse, userId: Int) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = category.categoryName,
@@ -265,7 +268,7 @@ fun CombinedCategorySection(category: CategoryResponse) {
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             items(category.entities) { entity ->
-                CombinedThumbnailItem(entity.thumbnail, entity.id) // Pass entityId
+                CombinedThumbnailItem(entity.thumbnail, entity.id, userId) // Pass entityId and userId
             }
         }
         Spacer(modifier = Modifier.height(10.dp))

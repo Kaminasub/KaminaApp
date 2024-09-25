@@ -76,7 +76,7 @@ fun HomePage(userId: String, navController: NavHostController) {
 
                 // Pass the entities to CombinedSections
                 entities?.let {
-                    CombinedSections(userId = userId, entities = it)
+                    CombinedSections(userId = userId.toInt(), entities = it)
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))

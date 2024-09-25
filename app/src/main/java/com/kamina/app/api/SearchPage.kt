@@ -48,12 +48,18 @@ fun fetchAutocompleteSuggestions(query: String, onResult: (List<AutocompleteSugg
         }
     })
 }
-
 fun fetchSearchResults(query: String, onResult: (List<SearchResult>?) -> Unit) {
     SearchApi.getSearchResults(query).enqueue(object : Callback<List<SearchResult>> {
         override fun onResponse(call: Call<List<SearchResult>>, response: Response<List<SearchResult>>) {
             if (response.isSuccessful) {
-                onResult(response.body())
+                try {
+                    val responseBody = response.body()
+                    Log.d("SearchAPI", "Parsed API Response: $responseBody")
+                    onResult(responseBody)
+                } catch (e: Exception) {
+                    Log.e("SearchAPI", "Parsing Error: ${e.message}")
+                    onResult(null)
+                }
             } else {
                 Log.e("SearchAPI", "API Error: ${response.message()}")
                 onResult(null)
@@ -66,3 +72,4 @@ fun fetchSearchResults(query: String, onResult: (List<SearchResult>?) -> Unit) {
         }
     })
 }
+

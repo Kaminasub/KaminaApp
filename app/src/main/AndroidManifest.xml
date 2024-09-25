@@ -81,6 +81,12 @@
             android:exported="true"
             android:theme="@style/Theme.KaminaApp">
         </activity>
+        <activity
+            android:name=".WatchPage"
+            android:hardwareAccelerated="true"
+            android:exported="true"
+            android:theme="@style/Theme.KaminaApp">
+        </activity>
 
     </application>
 

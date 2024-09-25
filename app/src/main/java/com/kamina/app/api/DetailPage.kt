@@ -30,13 +30,6 @@ data class EntityDetail(
     val isMovie: Int
 )
 
-data class UserProgress(
-    val currentSeason: Int,
-    val currentEpisode: Int,
-    val watched: Boolean,
-    val entityId: Int
-)
-
 // Data classes for episodes and user progress from WatchPage
 data class WatchPageEpisode(
     val id: Int,
@@ -72,12 +65,6 @@ interface DetailPageApiService {
     @GET("episodes/{id}/seasons/{season}")
     suspend fun getEpisodes(@Path("id") id: Int, @Path("season") season: Int): List<Episode>
 
-    // Fetch user progress for DetailPage
-    @GET("api/user_progress/{userId}/{entityId}")
-    suspend fun getUserProgress(
-        @Path("userId") userId: Int,
-        @Path("entityId") entityId: Int
-    ): UserProgress?
 
     // Fetch movie details, including filePath
     @GET("videos/{entityId}")
@@ -162,14 +149,7 @@ suspend fun fetchEpisodes(id: Int, season: Int): List<Episode>? {
     }
 }
 
-suspend fun fetchUserProgress(userId: Int, entityId: Int): UserProgress? {
-    return try {
-        detailPageApi.getUserProgress(userId, entityId)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
+
 
 // API functions for WatchPage
 suspend fun fetchWatchPageEpisode(entityId: Int, season: Int, episode: Int): WatchPageEpisode? {
@@ -181,14 +161,7 @@ suspend fun fetchWatchPageEpisode(entityId: Int, season: Int, episode: Int): Wat
     }
 }
 
-suspend fun fetchWatchPageUserProgress(userId: Int, entityId: Int, videoId: Int): WatchPageUserProgress? {
-    return try {
-        detailPageApi.getWatchPageUserProgress(userId, entityId, videoId)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
+
 
 suspend fun fetchNextEpisode(entityId: Int, season: Int, episode: Int): WatchPageEpisode? {
     return try {

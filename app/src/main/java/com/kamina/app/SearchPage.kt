@@ -43,7 +43,7 @@ import com.kamina.app.api.fetchAutocompleteSuggestions
 import com.kamina.app.api.fetchSearchResults
 
 @Composable
-fun SearchPage(navController: NavHostController) {  // Added navController as a parameter
+fun SearchPage(navController: NavHostController, userId: Int) {  // Accept userId as a parameter
     var searchQuery by remember { mutableStateOf("") }
     var autocompleteSuggestions by remember { mutableStateOf<List<AutocompleteSuggestion>?>(null) }
     var searchResults by remember { mutableStateOf<List<SearchResult>?>(null) }
@@ -98,7 +98,7 @@ fun SearchPage(navController: NavHostController) {  // Added navController as a 
 
                     // Search results
                     searchResults?.let {
-                        SearchResults(results = it)
+                        SearchResults(results = it, userId = userId)  // Pass userId to SearchResults
                     }
 
                     if (isLoading) {
@@ -109,6 +109,7 @@ fun SearchPage(navController: NavHostController) {  // Added navController as a 
         }
     )
 }
+
 
 @Composable
 fun SearchBar(searchQuery: String, onSearchQueryChange: (String) -> Unit) {
@@ -162,7 +163,7 @@ fun AutocompleteSuggestions(suggestions: List<AutocompleteSuggestion>, onSuggest
 }
 
 @Composable
-fun SearchResults(results: List<SearchResult>) {
+fun SearchResults(results: List<SearchResult>, userId: Int) {  // Accept userId as a parameter
     val context = LocalContext.current
 
     LazyRow(
@@ -175,9 +176,10 @@ fun SearchResults(results: List<SearchResult>) {
             Column(
                 modifier = Modifier
                     .clickable {
-                        // Navigate to DetailPageActivity with entityId
+                        // Navigate to DetailPageActivity with entityId and userId
                         val intent = Intent(context, DetailPageActivity::class.java).apply {
-                            putExtra("entityId", result.id) // Pass the entityId
+                            putExtra("entityId", result.id)  // Pass the entityId
+                            putExtra("userId", userId)  // Pass the userId
                         }
                         context.startActivity(intent)
                     }
@@ -196,4 +198,5 @@ fun SearchResults(results: List<SearchResult>) {
         }
     }
 }
+
 

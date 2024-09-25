@@ -34,7 +34,7 @@ import com.kamina.app.api.MoviesCategoryResponse
 import com.kamina.app.api.fetchMoviesByCategory
 
 @Composable
-fun MoviesPage() {
+fun MoviesPage(userId: Int) {  // Accept userId as an argument
     var moviesCategories by remember { mutableStateOf<List<MoviesCategoryResponse>?>(null) }
 
     // Fetch movies categories from the API
@@ -49,7 +49,7 @@ fun MoviesPage() {
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(moviesCategoryList) { category ->
                 // Display each movies category
-                MoviesCategorySection(category = category)
+                MoviesCategorySection(category = category, userId = userId)  // Pass userId to category section
             }
         }
     } ?: run {
@@ -59,7 +59,7 @@ fun MoviesPage() {
 }
 
 @Composable
-fun MoviesCategorySection(category: MoviesCategoryResponse) {
+fun MoviesCategorySection(category: MoviesCategoryResponse, userId: Int) {  // Accept userId
     Column(modifier = Modifier.fillMaxWidth()) {
         // Display the category name
         Text(
@@ -77,7 +77,7 @@ fun MoviesCategorySection(category: MoviesCategoryResponse) {
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             items(category.entities) { entity ->
-                MoviesThumbnailItem(thumbnailUrl = entity.thumbnail, entityId = entity.id)  // Pass entityId to the item
+                MoviesThumbnailItem(thumbnailUrl = entity.thumbnail, entityId = entity.id, userId = userId)  // Pass entityId and userId to the item
             }
         }
 
@@ -86,7 +86,7 @@ fun MoviesCategorySection(category: MoviesCategoryResponse) {
 }
 
 @Composable
-fun MoviesThumbnailItem(thumbnailUrl: String, entityId: Int) {
+fun MoviesThumbnailItem(thumbnailUrl: String, entityId: Int, userId: Int) {  // Accept userId
     val context = LocalContext.current  // Get current context for navigation
 
     Image(
@@ -102,6 +102,7 @@ fun MoviesThumbnailItem(thumbnailUrl: String, entityId: Int) {
                 // Navigate to DetailPageActivity when thumbnail is clicked
                 val intent = Intent(context, DetailPageActivity::class.java).apply {
                     putExtra("entityId", entityId)  // Pass the entityId to the DetailPageActivity
+                    putExtra("userId", userId)  // Pass the userId to the DetailPageActivity
                 }
                 context.startActivity(intent)
             },

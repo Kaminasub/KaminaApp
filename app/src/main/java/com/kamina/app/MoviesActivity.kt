@@ -27,15 +27,15 @@ class MoviesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Fetch the userId from SharedPreferences
+        // Fetch the userId from SharedPreferences and convert it to Int
         val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-        val userId = sharedPreferences.getString("userId", null)
+        val userId = sharedPreferences.getString("userId", null)?.toIntOrNull() ?: 0  // Convert userId to Int
 
         setContent {
             KaminaAppTheme {
                 GradientBackground {
-                    if (userId != null) {
-                        MoviesPageScreen(userId)  // Pass the userId to the MoviesPage composable
+                    if (userId != 0) {  // Check if userId is valid
+                        MoviesPageScreen(userId)  // Pass the userId to the MoviesPageScreen composable
                     } else {
                         Text("Error: User not logged in")
                     }
@@ -44,9 +44,8 @@ class MoviesActivity : ComponentActivity() {
         }
     }
 
-
     @Composable
-    fun MoviesPageScreen(userId: String) {
+    fun MoviesPageScreen(userId: Int) {  // Change userId type to Int
         val navController = rememberNavController() // Create a dummy NavController
 
         Scaffold(
@@ -62,8 +61,8 @@ class MoviesActivity : ComponentActivity() {
                 ) {
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // MoviesPage composable with movies content
-                    MoviesPage()  // Call the MoviesPage composable here
+                    // MoviesPage composable with movies content and pass userId
+                    MoviesPage(userId = userId)  // Pass userId to MoviesPage
                 }
             }
         )

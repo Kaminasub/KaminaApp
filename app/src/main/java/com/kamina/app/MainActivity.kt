@@ -31,9 +31,18 @@ class MainActivity : ComponentActivity() {
                         val userId = "userIdPlaceholder"
                         HomePage(userId = userId, navController = navController)
                     }
-                    composable("series") { SeriesPage() }
-                    composable("movies") { MoviesPage() }
-                    composable("search") { SearchPage(navController = navController) }
+                    composable("series") {
+                        // Convert userId from String to Int, default to 0 if conversion fails
+                        val userIdInt = userId.toIntOrNull() ?: 0
+                        SeriesPage(userId = userIdInt)  // Pass the converted userId to SeriesPage
+                    }
+                    composable("movies") {
+                        val userId = sharedPreferences.getString("userId", null)?.toIntOrNull() ?: 0  // Retrieve userId from SharedPreferences
+                        MoviesPage(userId = userId)  // Pass userId to MoviesPage
+                    }
+                    composable("search") {
+                        SearchPage(navController = navController, userId = userId.toIntOrNull() ?: 0)  // Convert userId to Int
+                    }
                     composable("configuration") {
                         ConfigurationPage(userId = userId, setUserIcon = {})
                     }

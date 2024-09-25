@@ -29,13 +29,13 @@ class SeriesActivity : ComponentActivity() {
 
         // Fetch the userId from SharedPreferences
         val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-        val userId = sharedPreferences.getString("userId", null)
+        val userId = sharedPreferences.getString("userId", null)?.toIntOrNull() ?: 0  // Convert to Int
 
         setContent {
             KaminaAppTheme {
                 GradientBackground {
-                    if (userId != null) {
-                        SeriesPageScreen(userId)  // Pass the userId to the SeriesPage composable
+                    if (userId != 0) {
+                        SeriesPageScreen(userId)  // Pass the userId as Int to the SeriesPage composable
                     } else {
                         Text("Error: User not logged in")
                     }
@@ -44,9 +44,8 @@ class SeriesActivity : ComponentActivity() {
         }
     }
 
-
     @Composable
-    fun SeriesPageScreen(userId: String) {
+    fun SeriesPageScreen(userId: Int) {  // Change userId type to Int
         val navController = rememberNavController() // Create a dummy NavController
 
         Scaffold(
@@ -63,7 +62,7 @@ class SeriesActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // SeriesPage composable with series content
-                    SeriesPage()  // Call the SeriesPage composable here
+                    SeriesPage(userId = userId)  // Pass userId as Int
                 }
             }
         )
