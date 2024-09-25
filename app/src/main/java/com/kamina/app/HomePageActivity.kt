@@ -7,9 +7,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -21,6 +23,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -63,13 +67,32 @@ fun HomePage(userId: String, navController: NavHostController) {
 
     // Scaffold with top Navbar
     Scaffold(
-        topBar = { Navbar(navController = navController, avatarChanged = false) },
+        topBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Transparent)  // Transparent Navbar
+            ) {
+                Navbar(navController = navController, avatarChanged = false)
+            }
+        },
         content = { paddingValues ->
+            // Apply the gradient background to the HomePage content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)  // Apply paddingValues here
-                    .background(Color.Transparent),
+                    .padding(paddingValues)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF9B34EF),  // #9b34ef
+                                Color(0xFF490CB0),  // #490cb0
+                                Color.Transparent  // Transparent
+                            ),
+                            start = Offset(0f, 0f),  // Start of the gradient
+                            end = Offset(1000f, 1000f)  // End of the gradient (adjust this to tweak the angle)
+                        )
+                    ),
                 verticalArrangement = Arrangement.Top
             ) {
                 Spacer(modifier = Modifier.height(10.dp))
@@ -83,6 +106,5 @@ fun HomePage(userId: String, navController: NavHostController) {
             }
         }
     )
-
 }
 

@@ -30,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -43,7 +45,7 @@ import com.kamina.app.api.fetchAutocompleteSuggestions
 import com.kamina.app.api.fetchSearchResults
 
 @Composable
-fun SearchPage(navController: NavHostController, userId: Int) {  // Accept userId as a parameter
+fun SearchPage(navController: NavHostController, userId: Int) {
     var searchQuery by remember { mutableStateOf("") }
     var autocompleteSuggestions by remember { mutableStateOf<List<AutocompleteSuggestion>?>(null) }
     var searchResults by remember { mutableStateOf<List<SearchResult>?>(null) }
@@ -68,18 +70,28 @@ fun SearchPage(navController: NavHostController, userId: Int) {  // Accept userI
 
     Scaffold(
         topBar = {
-            Navbar(navController = navController, avatarChanged = false)  // Navbar now uses navController
+            Navbar(navController = navController, avatarChanged = false)
         },
         content = { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(0.dp),
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF9B34EF),  // #9b34ef
+                                Color(0xFF490CB0),  // #490cb0
+                                Color.Transparent   // Transparent
+                            ),
+                            start = Offset(0f, 0f),
+                            end = Offset(1000f, 1000f)  // Adjust this to control the gradient angle
+                        )
+                    ),
                 verticalArrangement = Arrangement.Top
             ) {
+                // Your SearchPage content goes here
                 Column(modifier = Modifier.fillMaxSize().padding(10.dp)) {
-                    // Search input
                     SearchBar(
                         searchQuery = searchQuery,
                         onSearchQueryChange = { searchQuery = it }
@@ -87,7 +99,6 @@ fun SearchPage(navController: NavHostController, userId: Int) {  // Accept userI
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // Autocomplete suggestions
                     autocompleteSuggestions?.let {
                         AutocompleteSuggestions(suggestions = it, onSuggestionClick = { suggestion ->
                             searchQuery = suggestion
@@ -96,9 +107,8 @@ fun SearchPage(navController: NavHostController, userId: Int) {  // Accept userI
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Search results
                     searchResults?.let {
-                        SearchResults(results = it, userId = userId)  // Pass userId to SearchResults
+                        SearchResults(results = it, userId = userId)
                     }
 
                     if (isLoading) {
@@ -109,6 +119,7 @@ fun SearchPage(navController: NavHostController, userId: Int) {  // Accept userI
         }
     )
 }
+
 
 
 @Composable

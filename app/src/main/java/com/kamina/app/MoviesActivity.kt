@@ -10,17 +10,23 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.kamina.app.ui.theme.GradientBackground
 import com.kamina.app.ui.theme.KaminaAppTheme
+import androidx.compose.foundation.layout.Box
+
+
 
 
 class MoviesActivity : ComponentActivity() {
@@ -45,26 +51,44 @@ class MoviesActivity : ComponentActivity() {
     }
 
     @Composable
-    fun MoviesPageScreen(userId: Int) {  // Change userId type to Int
-        val navController = rememberNavController() // Create a dummy NavController
+    fun MoviesPageScreen(userId: Int) {
+        val navController = rememberNavController()
 
         Scaffold(
-            topBar = { Navbar(navController = navController, avatarChanged = false) },  // Pass NavController and avatarChanged
+            topBar = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Transparent)  // Transparent Navbar
+                ) {
+                    Navbar(navController = navController, avatarChanged = false)
+                }
+            },
             content = { paddingValues ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(2.dp)
-                        .background(Color.Transparent),
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    Color(0xFF9B34EF),  // #9b34ef
+                                    Color(0xFF490CB0),  // #490cb0
+                                    Color.Transparent   // Transparent
+                                ),
+                                start = Offset(0f, 0f),  // Start of the gradient
+                                end = Offset(1000f, 1000f)  // End of the gradient (adjust this to control the angle)
+                            )
+                        ),
                     verticalArrangement = Arrangement.Top
                 ) {
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // MoviesPage composable with movies content and pass userId
+                    // MoviesPage composable with movies content
                     MoviesPage(userId = userId)  // Pass userId to MoviesPage
                 }
             }
         )
     }
 }
+

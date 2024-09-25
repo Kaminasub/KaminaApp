@@ -2,14 +2,18 @@ package com.kamina.app
 
 
 import android.content.Intent
+import androidx.benchmark.perfetto.Row
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +37,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.kamina.app.api.EntityDetail
 import com.kamina.app.api.Episode
 import com.kamina.app.api.Season
+import androidx.compose.foundation.lazy.LazyColumn
+
+
 
 @Composable
 fun DetailPageEpisodesTab(
@@ -76,54 +83,66 @@ fun DetailPageEpisodesTab(
             }
 
             // Display Episodes if a season is selected
-            LazyRow(modifier = Modifier.padding(10.dp)) {
+            LazyColumn(modifier = Modifier.padding(0.dp)) {
                 items(episodes) { episode ->
-                    Column(
+                    Row(
                         modifier = Modifier
-                            .padding(0.dp)
+                            .fillMaxWidth() // Make each episode take the full width
+                            .padding(8.dp)
                             .clickable {
-                                val intent = Intent(context, WatchPage::class.java).apply {  // Use WatchPage instead of WatchPageActivity
+                                val intent = Intent(context, WatchPage::class.java).apply {
                                     putExtra("season", episode.season)
                                     putExtra("episode", episode.episode)
-                                    putExtra("entityId", entityDetail.id)  // Pass entityId to WatchPage
-                                    putExtra("userId", userId)  // Pass userId to WatchPage
+                                    putExtra("entityId", entityDetail.id)
+                                    putExtra("userId", userId)
                                 }
                                 context.startActivity(intent)
                             }
                     ) {
-                        // If miniatura is null or empty, use the wall image from entityDetail
+                        // Display miniatura or fallback to wall image
                         val imageUrl = if (episode.miniatura.isNullOrEmpty()) {
                             entityDetail.wall
                         } else {
                             episode.miniatura
                         }
 
+                        // Image of the episode
                         Image(
                             painter = rememberAsyncImagePainter(imageUrl),
                             contentDescription = null,
                             modifier = Modifier
-                                .size(150.dp)
+                                .size(200.dp)
                                 .clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Crop
                         )
-                        Spacer(modifier = Modifier.height(0.dp))
-                        Text(
-                            text = "S${episode.season} E${episode.episode}: ${episode.title}",
-                            color = Color.White,
-                            fontSize = 16.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = episode.description,
-                            color = Color.Gray,
-                            fontSize = 14.sp
-                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Episode details: Season/Episode, title, and description
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(start = 8.dp)
+                        ) {
+                            Text(
+                                text = "S${episode.season}E${episode.episode}: ${episode.title}",
+                                color = Color.White,
+                                fontSize = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = episode.description,
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
+                    Spacer(modifier = Modifier.height(16.dp)) // Add space between episodes
                 }
             }
         }
     }
-}
+    }
+
+
 
 
 

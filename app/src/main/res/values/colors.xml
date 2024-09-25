@@ -9,4 +9,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00000000</color>
     <color name="rounded_background">#00000000</color>
+    <color name="background">#58125D</color>
+
 </resources>

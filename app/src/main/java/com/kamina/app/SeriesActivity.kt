@@ -7,15 +7,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
@@ -45,26 +49,44 @@ class SeriesActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SeriesPageScreen(userId: Int) {  // Change userId type to Int
-        val navController = rememberNavController() // Create a dummy NavController
+    fun SeriesPageScreen(userId: Int) {
+        val navController = rememberNavController()
 
         Scaffold(
-            topBar = { Navbar(navController = navController, avatarChanged = false) },  // Pass NavController and avatarChanged
+            topBar = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Transparent)  // Transparent Navbar
+                ) {
+                    Navbar(navController = navController, avatarChanged = false)
+                }
+            },
             content = { paddingValues ->
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(2.dp)
-                        .background(Color.Transparent),
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    Color(0xFF9B34EF),  // #9b34ef
+                                    Color(0xFF490CB0),  // #490cb0
+                                    Color.Transparent   // Transparent
+                                ),
+                                start = Offset(0f, 0f),
+                                end = Offset(1000f, 1000f)  // Adjust this to control the gradient angle
+                            )
+                        ),
                     verticalArrangement = Arrangement.Top
                 ) {
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // SeriesPage composable with series content
-                    SeriesPage(userId = userId)  // Pass userId as Int
+                    SeriesPage(userId = userId)
                 }
             }
         )
     }
 }
+

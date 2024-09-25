@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -36,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -81,9 +84,9 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
     var userProgress by remember { mutableStateOf<UserProgress?>(null) }
 
     // Fetch entity details, cast, suggestions, seasons, and status if series
+    // Update this part in the LaunchedEffect block where the entity details are fetched
     LaunchedEffect(entityId) {
         coroutineScope.launch {
-            // Fetch entity details, cast, and suggestions
             entity = fetchEntityDetails(entityId)
             cast = fetchCast(entityId) ?: emptyList()
             suggestions = fetchSuggestions(entityId) ?: emptyList()
@@ -91,6 +94,7 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
             if (entity?.isMovie == 1) {
                 video = getMovieDetails(entityId)
                 currentEpisode = null // No episodes for movies
+                activeTab = "SUGGESTIONS" // Default to Suggestions for movies
             } else {
                 seasons = fetchSeasons(entityId) ?: emptyList()
 
@@ -111,17 +115,16 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                     }
                 }
 
-                // Log to help debug episodes fetching
-                Log.d("DetailPage", "Fetched episodes: $episodes, currentEpisode: $currentEpisode")
+                activeTab = "EPISODES" // Default to Episodes for series
             }
 
-            // Fetch current status for the user and entity
             fetchUserEntityStatus(userId, entityId) { result ->
                 selectedStatus = result?.status ?: 0  // Default to 0 if no status is found
                 Log.d("DetailPage", "Fetched status: $selectedStatus")
             }
         }
     }
+
 
     Scaffold(
         topBar = { Navbar(navController = navController, avatarChanged = false) },
@@ -130,37 +133,60 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(2.dp)
-                    .background(Color.Transparent),
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF9B34EF),  // #9b34ef
+                                Color(0xFF490CB0),  // #490cb0
+                                Color.Transparent   // Transparent
+                            ),
+                            start = Offset(0f, 0f),  // Start of the gradient
+                            end = Offset(1000f, 1000f)  // End of the gradient (adjust this to control the gradient angle)
+                        )
+                    ),
                 verticalArrangement = Arrangement.Top
             ) {
                 entity?.let { entityDetail ->
-                    // Display wall image
-                    entityDetail.wall?.let {
-                        Image(
-                            painter = rememberAsyncImagePainter(it),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(250.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp) // Adjust as necessary to account for both wall and logo
+                    ) {
+                        // Display wall image
+                        entityDetail.wall?.let {
+                            Image(
+                                painter = rememberAsyncImagePainter(it),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp) // Wall image height
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
 
-                    // Display logo or name
-                    entityDetail.logo?.let {
-                        Image(
-                            painter = rememberAsyncImagePainter(it),
-                            contentDescription = "Logo",
-                            modifier = Modifier.height(100.dp)
-                        )
-                    } ?: Text(
-                        text = entityDetail.name,
-                        fontSize = 24.sp,
-                        modifier = Modifier.padding(8.dp)
-                    )
+                        // Display logo or name, overlayed on the bottom part of the wall image
+                        if (entityDetail.logo != null) {
+                            Image(
+                                painter = rememberAsyncImagePainter(entityDetail.logo),
+                                contentDescription = "Logo",
+                                modifier = Modifier
+                                    .height(100.dp) // Logo height
+                                    .align(Alignment.BottomCenter) // Align to the bottom center of the Box
+                                    .offset(y = 5.dp) // Offset the logo to make it overlap with the wall image
+                            )
+                        } else {
+                            Text(
+                                text = entityDetail.name,
+                                fontSize = 24.sp,
+                                color = Color.White, // Ensure text is visible
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .offset(y = 5.dp) // Same offset as the logo
+                            )
+                        }
+                    }
 
                     // Display episode information before the PlayButton (only for series)
                     if (entityDetail.isMovie == 0) {
@@ -221,28 +247,44 @@ fun DetailPageScreen(entityId: Int, userId: Int) {
                     }
 
                     // Tabs Section
-                    TabRow(selectedTabIndex = when (activeTab) {
-                        "EPISODES" -> 0
-                        "SUGGESTIONS" -> 1
-                        "CAST" -> 2
-                        "DETAILS" -> 3
-                        else -> 0
-                    }) {
+                    // Correct this part in the TabRow
+                    TabRow(
+                        selectedTabIndex = when (activeTab) {
+                            "EPISODES" -> 0
+                            "SUGGESTIONS" -> 1
+                            "CAST" -> 2
+                            "DETAILS" -> 3
+                            else -> 0 // Default to 0 if something goes wrong
+                        }
+                    ) {
                         if (entityDetail.isMovie == 0) {
-                            Tab(selected = activeTab == "EPISODES", onClick = { activeTab = "EPISODES" }) {
+                            Tab(
+                                selected = activeTab == "EPISODES",
+                                onClick = { activeTab = "EPISODES" }
+                            ) {
                                 Text("Episodes")
                             }
                         }
-                        Tab(selected = activeTab == "SUGGESTIONS", onClick = { activeTab = "SUGGESTIONS" }) {
+                        Tab(
+                            selected = activeTab == "SUGGESTIONS",
+                            onClick = { activeTab = "SUGGESTIONS" }
+                        ) {
                             Text("Suggestions")
                         }
-                        Tab(selected = activeTab == "CAST", onClick = { activeTab = "CAST" }) {
+                        Tab(
+                            selected = activeTab == "CAST",
+                            onClick = { activeTab = "CAST" }
+                        ) {
                             Text("Cast")
                         }
-                        Tab(selected = activeTab == "DETAILS", onClick = { activeTab = "DETAILS" }) {
+                        Tab(
+                            selected = activeTab == "DETAILS",
+                            onClick = { activeTab = "DETAILS" }
+                        ) {
                             Text("Details")
                         }
                     }
+
 
                     // Tab Content
                     when (activeTab) {

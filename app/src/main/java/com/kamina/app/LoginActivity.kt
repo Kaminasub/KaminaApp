@@ -2,229 +2,205 @@ package com.kamina.app
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
-import android.util.Log
-import android.view.View
-import android.view.ViewGroup
-import android.view.WindowInsets
-import android.view.WindowInsetsController
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Button
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.Spinner
-import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import com.kamina.app.api.ApiService
-import com.kamina.app.api.LoginRequest
-import com.kamina.app.api.LoginResponse
-import com.kamina.app.api.PinLoginRequest
-import com.kamina.app.api.UsernameResponse
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import com.kamina.app.api.*
+import com.kamina.app.ui.theme.KaminaAppTheme
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class LoginActivity : AppCompatActivity() {
-
-    private lateinit var sharedPreferences: SharedPreferences
-    private lateinit var usernameDropdown: Spinner
-    private lateinit var pinLayout: LinearLayout
-    private lateinit var pinEditText1: EditText
-    private lateinit var pinEditText2: EditText
-    private lateinit var pinEditText3: EditText
-    private lateinit var pinEditText4: EditText
-    private lateinit var passwordEditText: EditText
-    private lateinit var loginButton: Button
-    private lateinit var toggleLoginText: TextView
-
-    private var isPinLogin = true // Start with PIN login by default
-    private var selectedUsername: String? = null
+class LoginActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login)
 
-        // Initialize sharedPreferences
-        sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        setContent {
+            KaminaAppTheme {
+                LoginScreen()
+            }
+        }
+    }
 
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun LoginScreen() {
+        var selectedUsername by remember { mutableStateOf("Select Username") }
+        var pin by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var isPinLogin by remember { mutableStateOf(true) }
+        var isDropdownExpanded by remember { mutableStateOf(false) }
+        var usernames by remember { mutableStateOf(listOf("Select Username", "mama")) }
+        val context = LocalContext.current
+        val coroutineScope = rememberCoroutineScope()
 
-        // Hide status and navigation bars
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.setDecorFitsSystemWindows(false)
-            val controller = window.insetsController
-            controller?.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-            controller?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_FULLSCREEN or
-                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    )
+        // Toast state
+        var toastMessage by remember { mutableStateOf<String?>(null) }
+
+        // Show toast if message is available
+        toastMessage?.let { message ->
+            LaunchedEffect(message) {
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                toastMessage = null // Reset the message after showing
+            }
         }
 
-        usernameDropdown = findViewById(R.id.usernameDropdown)
-        pinLayout = findViewById(R.id.pinLayout)
-        pinEditText1 = findViewById(R.id.pinEditText1)
-        pinEditText2 = findViewById(R.id.pinEditText2)
-        pinEditText3 = findViewById(R.id.pinEditText3)
-        pinEditText4 = findViewById(R.id.pinEditText4)
-        passwordEditText = findViewById(R.id.passwordEditText)
-        loginButton = findViewById(R.id.buttonLogin)
-        toggleLoginText = findViewById(R.id.toggleLoginText)
-
-        // Initially hide PIN and password fields
-        pinLayout.visibility = View.GONE
-        passwordEditText.visibility = View.GONE
-        loginButton.visibility = View.GONE
-        toggleLoginText.visibility = View.GONE
-
-        // Fetch usernames and populate the dropdown
-        fetchUsernames()
-        setupPinInputListeners()
-
-        // Toggle between PIN and password login
-        toggleLoginText.setOnClickListener {
-            isPinLogin = !isPinLogin
-            updateLoginMethod()
+        // Fetch usernames from the API
+        LaunchedEffect(Unit) {
+            fetchUsernames { fetchedUsernames ->
+                usernames = listOf("Select Username") + fetchedUsernames
+            }
         }
 
-        loginButton.setOnClickListener {
+        // Define the gradient background colors
+        val gradientColors = listOf(
+            Color(0xFF9B34EF),  // #9b34ef
+            Color(0xFF490CB0),  // #490cb0
+            Color.Transparent   // Tertiary color
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.linearGradient(colors = gradientColors))  // Apply gradient background
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Skull Icon
+            Image(
+                painter = painterResource(id = R.drawable.skull),
+                contentDescription = "Icon",
+                modifier = Modifier.size(100.dp)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Username Dropdown
+            ExposedDropdownMenuBox(
+                expanded = isDropdownExpanded,
+                onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
+            ) {
+                OutlinedTextField(
+                    value = selectedUsername,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Select Username") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = isDropdownExpanded,
+                    onDismissRequest = { isDropdownExpanded = false }
+                ) {
+                    usernames.forEach { username ->
+                        DropdownMenuItem(
+                            text = { Text(username) },
+                            onClick = {
+                                selectedUsername = username
+                                isDropdownExpanded = false
+                            },
+                            enabled = username != "Select Username"
+                        )
+                    }
+                }
+            }
+
             if (selectedUsername == "mama") {
-                // If mama is selected, login directly without PIN or password
-                navigateToHomePage()
-            } else if (isPinLogin) {
-                val pin = "${pinEditText1.text}${pinEditText2.text}${pinEditText3.text}${pinEditText4.text}"
-                performPinLogin(selectedUsername ?: "", pin)
-            } else {
-                val password = passwordEditText.text.toString()
-                performPasswordLogin(selectedUsername ?: "", password)
-            }
-        }
-    }
-
-    private fun fetchUsernames() {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.kaminajp.com")  // Ensure this is the correct base URL
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        val api = retrofit.create(ApiService::class.java)
-
-        api.getUsernames().enqueue(object : Callback<List<UsernameResponse>> {
-            override fun onResponse(call: Call<List<UsernameResponse>>, response: Response<List<UsernameResponse>>) {
-                if (response.isSuccessful) {
-                    val usernames = response.body()?.map { it.username } ?: emptyList()
-                    Log.d("LoginActivity", "Usernames fetched: $usernames")
-                    populateUsernameDropdown(usernames)
-                } else {
-                    Log.e("LoginActivity", "Failed to fetch usernames: ${response.errorBody()?.string()}")
-                    showError("Failed to fetch usernames: ${response.message()}")
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { navigateToHomePage(context) }) {
+                    Text("Login")
                 }
-            }
+            } else if (selectedUsername != "Select Username") {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            override fun onFailure(call: Call<List<UsernameResponse>>, t: Throwable) {
-                Log.e("LoginActivity", "Error fetching usernames: ${t.message}")
-                showError("Error fetching usernames: ${t.message}")
-            }
-        })
-    }
-
-
-    private fun populateUsernameDropdown(usernames: List<String>) {
-        // Add "Select Username" as the first item
-        val updatedUsernames = listOf("Select Username") + usernames
-
-        // Create an ArrayAdapter with a custom layout for the spinner items
-        val adapter = object : ArrayAdapter<String>(this, R.layout.spinner_item_center, updatedUsernames) {
-            override fun isEnabled(position: Int): Boolean {
-                // Disable the first item (Select Username)
-                return position != 0
-            }
-
-            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getDropDownView(position, convertView, parent) as TextView
-                if (position == 0) {
-                    view.setTextColor(Color.GRAY)  // Set color for "Select Username"
+                if (isPinLogin) {
+                    // PIN Input
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        repeat(4) { index ->
+                            OutlinedTextField(
+                                value = pin.getOrNull(index)?.toString() ?: "",
+                                onValueChange = { if (it.length <= 1) pin = pin.padEnd(index, ' ') + it },
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.width(40.dp)
+                            )
+                        }
+                    }
                 } else {
-                    view.setTextColor(Color.BLACK)  // Set color for other usernames
+                    // Password Input
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-                return view
-            }
-        }
 
-        adapter.setDropDownViewResource(R.layout.spinner_item_center)
-        usernameDropdown.adapter = adapter
+                Spacer(modifier = Modifier.height(16.dp))
 
-        // Set the custom background for the dropdown using reflection
-        try {
-            val popup = Spinner::class.java.getDeclaredField("mPopup")
-            popup.isAccessible = true
-            val popupWindow = popup.get(usernameDropdown) as android.widget.ListPopupWindow
-            popupWindow.setBackgroundDrawable(getDrawable(R.drawable.spinner_dropdown_background))  // Apply custom dropdown background
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
-        usernameDropdown.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                selectedUsername = updatedUsernames[position]
-                Log.d("LoginActivity", "Selected username: $selectedUsername")
-
-                if (position == 0) {
-                    // Hide everything if "Select Username" is selected
-                    pinLayout.visibility = View.GONE
-                    passwordEditText.visibility = View.GONE
-                    loginButton.visibility = View.GONE
-                    toggleLoginText.visibility = View.GONE
-                } else if (selectedUsername == "mama") {
-                    // For "mama", show only the login button
-                    pinLayout.visibility = View.GONE
-                    passwordEditText.visibility = View.GONE
-                    loginButton.visibility = View.VISIBLE
-                    toggleLoginText.visibility = View.GONE
-                } else {
-                    // For other users, show PIN/password options and the login button
-                    pinLayout.visibility = View.VISIBLE
-                    loginButton.visibility = View.VISIBLE
-                    toggleLoginText.visibility = View.VISIBLE
+                Button(onClick = {
+                    coroutineScope.launch {
+                        if (isPinLogin) {
+                            performPinLogin(selectedUsername, pin, context) { message ->
+                                toastMessage = message
+                            }
+                        } else {
+                            performPasswordLogin(selectedUsername, password, context) { message ->
+                                toastMessage = message
+                            }
+                        }
+                    }
+                }) {
+                    Text("Login")
                 }
-            }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                selectedUsername = null
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Toggle Login Method
+                Text(
+                    text = if (isPinLogin) "Swipe to login with password" else "Swipe to login with PIN",
+                    color = Color.White,
+                    modifier = Modifier.clickable { isPinLogin = !isPinLogin }
+                )
             }
         }
     }
 
-    private fun updateLoginMethod() {
-        if (isPinLogin) {
-            // Show PIN fields and hide password field
-            pinLayout.visibility = View.VISIBLE
-            passwordEditText.visibility = View.GONE
-            toggleLoginText.text = getString(R.string.swipe_to_login_password)
-        } else {
-            // Show password field and hide PIN fields
-            pinLayout.visibility = View.GONE
-            passwordEditText.visibility = View.VISIBLE
-            toggleLoginText.text = getString(R.string.swipe_to_login_pin)
-        }
+    private fun navigateToHomePage(context: Context) {
+        val intent = Intent(context, HomePageActivity::class.java)
+        context.startActivity(intent)
     }
 
-    private fun performPinLogin(username: String, pin: String) {
-        Log.d("LoginActivity", "Performing PIN login for user: $username with PIN: $pin")
-
+    private fun performPinLogin(username: String, pin: String, context: Context, onResult: (String) -> Unit) {
         if (username.isEmpty() || pin.isEmpty()) {
-            showError("Username or PIN cannot be empty")
+            onResult("Username or PIN cannot be empty")
             return
         }
 
@@ -239,51 +215,24 @@ class LoginActivity : AppCompatActivity() {
         api.loginWithPin(pinLoginRequest).enqueue(object : Callback<LoginResponse> {
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                 if (response.isSuccessful) {
-                    // Get the userId from the API response and save it in SharedPreferences
                     val userId = response.body()?.userId
-                    saveUserId(userId ?: "")
-
-                    Log.d("LoginActivity", "Login with PIN successful")
-                    navigateToHomePage()
+                    saveUserId(context, userId ?: "")
+                    navigateToHomePage(context)
+                    onResult("Login with PIN successful")
                 } else {
-                    showError("Login with PIN failed. Please check your credentials.")
+                    onResult("Login with PIN failed")
                 }
             }
 
             override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                showError("An error occurred: ${t.message}")
+                onResult("An error occurred: ${t.message}")
             }
         })
     }
 
-    private fun setupPinInputListeners() {
-        pinEditText1.addTextChangedListener(PinTextWatcher(pinEditText1, pinEditText2))
-        pinEditText2.addTextChangedListener(PinTextWatcher(pinEditText2, pinEditText3))
-        pinEditText3.addTextChangedListener(PinTextWatcher(pinEditText3, pinEditText4))
-        pinEditText4.addTextChangedListener(PinTextWatcher(pinEditText4, null))  // Last box, no next box
-    }
-
-    // Custom TextWatcher class to handle focus movement
-    class PinTextWatcher(private val currentView: EditText, private val nextView: EditText?) : TextWatcher {
-
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            if (s?.length == 1) {
-                nextView?.requestFocus()  // Move to the next EditText
-            } else if (s?.length == 0 && before == 1) {
-                currentView.requestFocus()  // Stay in the current EditText
-            }
-        }
-
-        override fun afterTextChanged(s: Editable?) {}
-    }
-
-    private fun performPasswordLogin(username: String, password: String) {
-        Log.d("LoginActivity", "Performing password login for user: $username")
-
+    private fun performPasswordLogin(username: String, password: String, context: Context, onResult: (String) -> Unit) {
         if (username.isEmpty() || password.isEmpty()) {
-            showError("Username or password cannot be empty")
+            onResult("Username or Password cannot be empty")
             return
         }
 
@@ -298,43 +247,46 @@ class LoginActivity : AppCompatActivity() {
         api.login(loginRequest).enqueue(object : Callback<LoginResponse> {
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                 if (response.isSuccessful) {
-                    // Get the userId from the API response and save it in SharedPreferences
                     val userId = response.body()?.userId
-                    saveUserId(userId ?: "")
-
-                    Log.d("LoginActivity", "Login successful")
-                    navigateToHomePage()
+                    saveUserId(context, userId ?: "")
+                    navigateToHomePage(context)
+                    onResult("Login successful")
                 } else {
-                    showError("Login failed. Please check your credentials.")
+                    onResult("Login failed")
                 }
             }
 
             override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                showError("An error occurred: ${t.message}")
+                onResult("An error occurred: ${t.message}")
             }
         })
     }
 
-    private fun saveUserId(userId: String) {
-        val editor = sharedPreferences.edit()
-        editor.putString("userId", userId)
-        editor.apply()
-
-        // Log to check if the userId is saved correctly
-        val storedUserId = sharedPreferences.getString("userId", null)
-        Log.d("LoginActivity", "Stored User ID: $storedUserId")
+    private fun saveUserId(context: Context, userId: String) {
+        val sharedPreferences = context.getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putString("userId", userId).apply()
     }
 
+    private fun fetchUsernames(onSuccess: (List<String>) -> Unit) {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://api.kaminajp.com")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
 
-    private fun navigateToHomePage() {
-        val intent = Intent(this, HomePageActivity::class.java)
-        intent.putExtra("userId", sharedPreferences.getString("userId", null))
-        startActivity(intent)
-        finish()
-    }
+        val api = retrofit.create(ApiService::class.java)
 
+        api.getUsernames().enqueue(object : Callback<List<UsernameResponse>> {
+            override fun onResponse(call: Call<List<UsernameResponse>>, response: Response<List<UsernameResponse>>) {
+                if (response.isSuccessful) {
+                    onSuccess(response.body()?.map { it.username } ?: emptyList())
+                } else {
+                    onSuccess(emptyList())
+                }
+            }
 
-    private fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            override fun onFailure(call: Call<List<UsernameResponse>>, t: Throwable) {
+                onSuccess(emptyList())
+            }
+        })
     }
 }

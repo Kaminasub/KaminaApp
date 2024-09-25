@@ -34,7 +34,7 @@
             android:exported="true"
             android:configChanges="orientation|screenSize"
             android:theme="@style/Theme.KaminaApp"
-            android:screenOrientation="fullSensor"
+            android:screenOrientation="portrait"
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustPan"
             tools:ignore="DiscouragedApi">
@@ -48,43 +48,52 @@
         <activity
             android:name=".HomePageActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.KaminaApp">
+
         </activity>
         <activity
             android:name=".SeriesActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.KaminaApp">
         </activity>
         <activity
             android:name=".MoviesActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.KaminaApp">
         </activity>
         <activity
             android:name=".ConfigurationActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.KaminaApp">
         </activity>
         <activity
             android:name=".DetailPageActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.KaminaApp">
         </activity>
         <activity
             android:name=".SearchPageActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.KaminaApp">
         </activity>
         <activity
             android:name=".WatchPageActivity"
             android:hardwareAccelerated="true"
             android:exported="true"
+            android:screenOrientation="landscape"
             android:theme="@style/Theme.KaminaApp">
         </activity>
         <activity
             android:name=".WatchPage"
             android:hardwareAccelerated="true"
             android:exported="true"
+            android:screenOrientation="landscape"
             android:theme="@style/Theme.KaminaApp">
         </activity>
 

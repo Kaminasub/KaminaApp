@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -139,6 +143,17 @@ fun ConfigurationPage(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF9B34EF),  // #9b34ef
+                        Color(0xFF490CB0),  // #490cb0
+                        Color.Transparent   // Transparent
+                    ),
+                    start = Offset(0f, 0f),
+                    end = Offset(1000f, 1000f)  // Adjust this to control the gradient angle
+                )
+            )
     ) {
         // Avatar Selection
         if (loading) {
