@@ -28,6 +28,19 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+        <!-- Splash Activity (only this should have the MAIN and LAUNCHER intent filters) -->
+        <activity
+            android:name=".SplashActivity"
+            android:theme="@style/Theme.App.SplashScreen"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+
         <!-- Login Activity -->
         <activity
             android:name=".LoginActivity"
@@ -37,12 +50,8 @@
             android:screenOrientation="portrait"
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustPan"
-            tools:ignore="DiscouragedApi">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            tools:ignore="DiscouragedApi" />
+
 
         <!-- Home Page Activity -->
         <activity

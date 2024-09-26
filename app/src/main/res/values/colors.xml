@@ -2,13 +2,17 @@
 <resources>
     <color name="colorPrimaryDark">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
-    <color name="colorAccent">#FF3700B3</color>
+    <color name="colorAccent">#FF00E5</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-    <color name="colorPrimary">#FF000000</color>
+    <color name="colorPrimary">#9B34EF</color>
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00000000</color>
     <color name="rounded_background">#00000000</color>
-    <color name="background">#58125D</color>
+    <color name="background">#020228</color>
+    <color name="splash_background">#020228</color> <!-- Primary background color for the splash screen -->
+
+
+
 
 </resources>

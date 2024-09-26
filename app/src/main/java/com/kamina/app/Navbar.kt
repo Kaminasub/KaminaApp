@@ -3,6 +3,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -58,18 +61,25 @@ fun Navbar(navController: NavHostController, avatarChanged: Boolean) {
     // Re-fetch user icon when avatarChanged is toggled
     LaunchedEffect(userId, avatarChanged) {
         userId?.let {
-            // Use the UserApiHelper to fetch the user icon
             UserApiHelper.fetchUserIcon(it) { iconUrl ->
                 userIconUrl = iconUrl
             }
         }
     }
 
-    val painter = rememberAsyncImagePainter(userIconUrl ?: "") // Use Coil to load the icon
+    val painter = rememberAsyncImagePainter(userIconUrl ?: "")
+
+    // Gradient background colors
+    val gradientColors = listOf(
+        Color(0xFF9B34EF),  // #9b34ef
+        Color(0xFF490CB0),  // #490cb0
+        Color.Transparent   // Tertiary color
+    )
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(Brush.horizontalGradient(colors = gradientColors))  // Apply gradient background
             .padding(10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -161,6 +171,7 @@ fun Navbar(navController: NavHostController, avatarChanged: Boolean) {
         }
     }
 }
+
 
 
 

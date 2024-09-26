@@ -50,11 +50,14 @@ android {
 }
 
 dependencies {
-    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
-    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
 
     implementation("com.google.android.material:material:1.9.0")
-    implementation("androidx.compose.material3:material3:1.1.0")
+    implementation("androidx.compose.material3:material3:1.1.0") // Use only the stable version
+    implementation("androidx.compose.material:material-icons-core:1.4.3") // Latest stable version of material-icons-core
+    implementation("androidx.compose.material:material-icons-extended:1.4.3") // Optional if you need extended icons
+
 
     implementation("androidx.compose.ui:ui:1.7.1")
     implementation("androidx.activity:activity-compose:1.9.2")
@@ -92,6 +95,7 @@ dependencies {
     implementation ("androidx.browser:browser:1.3.0")
     implementation(libs.filament.android)
     implementation(libs.androidx.benchmark.macro)
+    implementation(libs.espresso.core)
 
 
     testImplementation("junit:junit:4.13.2")

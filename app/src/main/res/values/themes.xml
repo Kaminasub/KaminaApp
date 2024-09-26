@@ -1,5 +1,11 @@
 <resources>
-    <!-- Base application theme using Material Components instead of Material3 -->
+    <!-- Splash Screen Theme -->
+    <style name="Theme.App.SplashScreen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/skull_background</item> <!-- Use any drawable or color here -->
+    </style>
+
+
+    <!-- Main App Theme -->
     <style name="Theme.KaminaApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here -->
         <item name="colorPrimary">@color/colorPrimary</item>
@@ -7,7 +13,7 @@
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
-        <!-- Set a simple solid color background for testing -->
-        <item name="android:windowBackground">@color/background</item> <!-- Use black as a simple color -->
+        <!-- Set the default background color for the main app -->
+        <item name="android:windowBackground">@color/background</item> <!-- Background color of your app -->
     </style>
 </resources>
