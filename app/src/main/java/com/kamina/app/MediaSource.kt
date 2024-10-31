@@ -14,12 +14,11 @@ import com.google.android.exoplayer2.util.MimeTypes
 
 class MediaSourceManager(private val context: Context) {
 
-    // Function that receives MIME type if available
+    // Function to get the appropriate media source based on the provided MIME type
     fun getMediaSource(url: String, mimeType: String?): MediaSource {
         val uri = Uri.parse(url)
         val dataSourceFactory = DefaultDataSource.Factory(context, DefaultHttpDataSource.Factory())
 
-        // Use the provided MIME type if available, otherwise make a reasonable guess
         return when (mimeType) {
             MimeTypes.APPLICATION_M3U8 -> {
                 HlsMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(uri))
@@ -31,13 +30,13 @@ class MediaSourceManager(private val context: Context) {
                 ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(uri))
             }
             else -> {
-                // Default to progressive media source if MIME type is not recognized or provided
+                // Fallback to progressive media source if MIME type is not recognized or provided
                 ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(uri))
             }
         }
     }
 
-    // Initialize player with optional MIME type
+    // Initialize ExoPlayer with the selected media source, accepting an optional MIME type
     fun initializePlayer(player: ExoPlayer, url: String, mimeType: String? = null) {
         val mediaSource = getMediaSource(url, mimeType)
         player.setMediaSource(mediaSource)

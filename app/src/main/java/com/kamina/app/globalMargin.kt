@@ -2,8 +2,8 @@ package com.kamina.app
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 // Define a reusable modifier for global margin
 fun Modifier.globalMargin(left: Dp = 0.dp, right: Dp = 0.dp): Modifier {

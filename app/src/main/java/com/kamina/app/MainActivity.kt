@@ -7,10 +7,9 @@ import android.view.View
 import android.view.WindowInsetsController
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.kamina.app.ui.theme.KaminaAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,37 +21,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KaminaAppTheme {
-                val navController = rememberNavController()
                 val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
                 val userId = sharedPreferences.getString("userId", null) ?: ""
+                val userLanguage = sharedPreferences.getString("appLanguage", "en") ?: "en" // Ensure not null
 
-                NavHost(navController = navController, startDestination = "home") {
-                    composable("home") {
-                        val userId = "userIdPlaceholder"
-                        HomePage(userId = userId, navController = navController)
-                    }
-                    composable("series") {
-                        // Convert userId from String to Int, default to 0 if conversion fails
-                        val userIdInt = userId.toIntOrNull() ?: 0
-                        SeriesPage(userId = userIdInt)  // Pass the converted userId to SeriesPage
-                    }
-                    composable("movies") {
-                        val userId = sharedPreferences.getString("userId", null)?.toIntOrNull() ?: 0  // Retrieve userId from SharedPreferences
-                        MoviesPage(userId = userId)  // Pass userId to MoviesPage
-                    }
-                    composable("search") {
-                        SearchPage(navController = navController, userId = userId.toIntOrNull() ?: 0)  // Convert userId to Int
-                    }
-                    composable("configuration") {
-                        ConfigurationPage(userId = userId, setUserIcon = {})
-                    }
-                    composable("detailpage/{entityId}/{userId}") { backStackEntry ->
-                        val entityId = backStackEntry.arguments?.getString("entityId")?.toIntOrNull() ?: 0
-                        val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: 0
-
-                        DetailPageScreen(entityId = entityId, userId = userId)
-                    }
+                // Display the HomePage if the user is logged in, otherwise display an error message
+                if (userId.isNotEmpty()) {
+                    // Convert userId to Int and pass to HomePage
+                    HomePage(userId = userId.toInt(), userLanguage = userLanguage)
+                } else {
+                    Text("Error: User not logged in", color = Color.White)
                 }
+
             }
         }
     }
@@ -69,10 +49,8 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val controller = window.insetsController
-            if (controller != null) {
-                controller.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
-                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
+            controller?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+            controller?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (

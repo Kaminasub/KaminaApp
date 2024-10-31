@@ -25,20 +25,18 @@ import com.kamina.app.api.ThumbnailData
 import com.kamina.app.api.fetchContinueWatching
 
 @Composable
-fun CategoriesContinue(userId: String) {
-    // State to hold the thumbnails
+fun CategoriesContinue(userId: String, userLanguage: String) {  // Ensure userLanguage is passed here
     var thumbnails by remember { mutableStateOf<List<ThumbnailData>?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // API call to fetch "Continue Watching" content
-    LaunchedEffect(userId) {
-        fetchContinueWatching(userId) { result ->
-            thumbnails = result
+    // API call to fetch "Continue Watching" content with userLanguage
+    LaunchedEffect(userId, userLanguage) {
+        fetchContinueWatching(userId, userLanguage) { result ->  // Pass userLanguage here
+            thumbnails = result?.filter { !it.name.isNullOrEmpty() && !it.thumbnail.isNullOrEmpty() }
             isLoading = false
         }
     }
 
-    // Conditionally render the section only if thumbnails are not null or empty
     if (!thumbnails.isNullOrEmpty()) {
         Column(
             modifier = Modifier
@@ -57,13 +55,11 @@ fun CategoriesContinue(userId: String) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(thumbnails!!) { thumbnail ->
-                    // Display each thumbnail
                     ThumbnailItem(thumbnail)
                 }
             }
         }
     } else if (isLoading) {
-        // Optionally show a loading state if still loading
         Text(
             text = "Loading...",
             color = Color.White,

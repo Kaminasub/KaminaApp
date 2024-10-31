@@ -2,21 +2,19 @@ package com.kamina.app
 
 import android.content.Intent
 import android.util.Log
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.kamina.app.api.fetchUserProgress
+import com.kamina.app.ui.components.CustomButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import androidx.compose.ui.Modifier
-
 
 @Composable
 fun PlayButton(
@@ -24,10 +22,11 @@ fun PlayButton(
     isMovie: Int,
     videoFilePath: String?,
     userId: Int,
-    modifier: Modifier = Modifier // Add this parameter
+    userLanguage: String,  // Pass the userLanguage parameter
+    modifier: Modifier = Modifier // Allow for passing a modifier
 ) {
     val context = LocalContext.current
-    var buttonText by remember { mutableStateOf("Play Series") }
+    var buttonText by remember { mutableStateOf(if (isMovie == 1) "Play Movie" else "Play Series") }
     var nextSeason by remember { mutableStateOf(1) }
     var nextEpisode by remember { mutableStateOf(1) }
 
@@ -36,6 +35,7 @@ fun PlayButton(
         CoroutineScope(Dispatchers.IO).launch {
             val userProgress = fetchUserProgress(userId, entityId)
             if (userProgress != null) {
+                // Update button text and progress based on whether the user has watched the content
                 if (userProgress.isWatched) {
                     buttonText = "Continue"
                     nextSeason = userProgress.currentSeason
@@ -52,30 +52,32 @@ fun PlayButton(
     }
 
     // Apply the passed modifier to the Button
-    Button(
+    CustomButton(
+        text = buttonText, // Text dynamically based on progress and isMovie flag
         onClick = {
             Log.d("PlayButton", "Button clicked. userId: $userId, entityId: $entityId, isMovie: $isMovie")
 
+            // Handle movie play logic
             if (isMovie == 1 && videoFilePath != null) {
                 val intent = Intent(context, WatchPageActivity::class.java).apply {
                     putExtra("videoUrl", videoFilePath)
                     putExtra("userId", userId)
+                    putExtra("userLanguage", userLanguage)  // Pass user language to WatchPageActivity
                 }
                 context.startActivity(intent)
-            } else {
+            }
+            // Handle series play logic
+            else {
                 val intent = Intent(context, WatchPage::class.java).apply {
                     putExtra("entityId", entityId)
                     putExtra("season", nextSeason)
                     putExtra("episode", nextEpisode)
                     putExtra("userId", userId)
+                    putExtra("userLanguage", userLanguage)  // Pass user language to WatchPage
                 }
                 context.startActivity(intent)
             }
         },
-        modifier = modifier // Apply the modifier here
-    ) {
-        Text(text = if (isMovie == 1) "Play Movie" else buttonText)
-    }
+        modifier = modifier // Apply any external modifier passed to the Button
+    )
 }
-
-

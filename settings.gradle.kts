@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "KaminaApp"
+rootProject.name = "Kamina+"
 include(":app")
  

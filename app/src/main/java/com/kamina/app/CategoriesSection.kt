@@ -23,17 +23,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.kamina.app.api.CategoryResponse
-import com.kamina.app.api.fetchCategories
+import com.kamina.app.api.HomeCategoryResponse
+import com.kamina.app.api.fetchHomeCategories
 
 @Composable
-fun CategoriesSection() {
-    var categories by remember { mutableStateOf<List<CategoryResponse>?>(null) }
+fun CategoriesSection(userLanguage: String) {
+    var categories by remember { mutableStateOf<List<HomeCategoryResponse>?>(null) }
 
-    // Fetch categories from the API
-    LaunchedEffect(Unit) {
-        fetchCategories { result ->
-            categories = result
+    // Fetch categories from the API with the language
+    LaunchedEffect(userLanguage) {
+        fetchHomeCategories(language = userLanguage) { result ->
+            categories = result?.filter { category ->
+                // Only include categories with entities that have a valid translation
+                category.entities.any { entity ->
+                    entity.translations?.language == userLanguage
+                }
+            }
         }
     }
 
@@ -42,7 +47,7 @@ fun CategoriesSection() {
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(categoryList) { category ->
                 // Display each category
-                CategorySection(category = category)
+                CategorySection(category = category, userLanguage = userLanguage)
             }
         }
     } ?: run {
@@ -52,7 +57,7 @@ fun CategoriesSection() {
 }
 
 @Composable
-fun CategorySection(category: CategoryResponse) {
+fun CategorySection(category: HomeCategoryResponse, userLanguage: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Display the category name
         Text(
@@ -64,19 +69,24 @@ fun CategorySection(category: CategoryResponse) {
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Display thumbnails in a horizontal scroll
+        // Filter entities based on the user language and display thumbnails
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(category.thumbnails) { thumbnailUrl ->
-                ThumbnailItem(thumbnailUrl)
+            // Only display entities that have a translation in the current language
+            items(category.entities.filter { it.translations?.language == userLanguage }) { entity ->
+                val thumbnailUrl = entity.thumbnail ?: "" // Provide an empty string or a placeholder for null values
+                if (thumbnailUrl.isNotEmpty()) {
+                    ThumbnailItem(thumbnailUrl)
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(10.dp))
     }
 }
+
 
 @Composable
 fun ThumbnailItem(thumbnailUrl: String) {

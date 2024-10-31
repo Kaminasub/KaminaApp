@@ -11,10 +11,12 @@ class DetailPageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Retrieve entityId and userId from intent
+        // Retrieve entityId, userId, and userLanguage from intent or other sources
         val entityId = intent?.getIntExtra("entityId", 0) ?: 0
         val userId = intent?.getIntExtra("userId", 0) ?: 0 // Assuming userId is passed as well
-        Log.d("DetailPageActivity", "Received entityId: $entityId, userId: $userId")
+        val userLanguage = intent?.getStringExtra("userLanguage") ?: "en" // Default to "en" if not passed
+
+        Log.d("DetailPageActivity", "Received entityId: $entityId, userId: $userId, userLanguage: $userLanguage")
 
         if (entityId == 0) {
             Log.e("DetailPageActivity", "Invalid entityId, stopping activity.")
@@ -24,10 +26,10 @@ class DetailPageActivity : ComponentActivity() {
                 }
             }
         } else {
-            // Load detail page content and pass the entityId and userId to DetailPageScreen
+            // Load detail page content and pass the entityId, userId, and userLanguage to DetailPageScreen
             setContent {
                 KaminaAppTheme {
-                    DetailPageScreen(entityId = entityId, userId = userId)  // Pass both entityId and userId to the composable
+                    DetailPageScreen(entityId = entityId, userId = userId, userLanguage = userLanguage)  // Pass all parameters
                 }
             }
         }

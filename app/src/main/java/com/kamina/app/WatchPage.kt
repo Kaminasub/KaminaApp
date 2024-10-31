@@ -41,6 +41,7 @@ class WatchPage : AppCompatActivity() {
     private lateinit var countdownTextView: TextView // TextView for countdown
     private var currentVideoId: Int = -1
     private var countdownTime = 10  // Initial countdown value
+    private var userLanguage: String? = null // Dynamically handle language, nullable
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,12 +64,13 @@ class WatchPage : AppCompatActivity() {
         countdownTextView = findViewById(R.id.countdownTextView)  // New TextView for countdown
         countdownTextView.visibility = View.GONE  // Initially hide the countdown text
 
-        // Extract the entityId, season, and episode from the intent
+        // Extract the entityId, season, episode, userId, and userLanguage from the intent
         entityId = intent.getIntExtra("entityId", -1)
         season = intent.getIntExtra("season", 1)
         episode = intent.getIntExtra("episode", 1)
         userId = intent.getIntExtra("userId", -1)
-        Log.d("WatchPage", "Received userId in WatchPage: $userId")
+        userLanguage = intent.getStringExtra("userLanguage") // Get user language from intent
+        Log.d("WatchPage", "Received userId in WatchPage: $userId, language: $userLanguage")
 
         if (userId == -1) {
             Log.e("WatchPage", "Invalid userId passed to WatchPage")
@@ -114,11 +116,24 @@ class WatchPage : AppCompatActivity() {
         webView.webViewClient = WebViewClient()
     }
 
-    // Function to fetch episode details
+    // Function to convert the "duration" field (formatted as HH:mm:ss) to milliseconds
+    private fun convertDurationToMillis(duration: String): Long {
+        val timeParts = duration.split(":")
+        val hours = if (timeParts.size > 2) timeParts[0].toLong() else 0L
+        val minutes = if (timeParts.size > 1) timeParts[timeParts.size - 2].toLong() else 0L
+        val seconds = if (timeParts.isNotEmpty()) timeParts[timeParts.size - 1].toLong() else 0L
+
+        return TimeUnit.HOURS.toMillis(hours) +
+                TimeUnit.MINUTES.toMillis(minutes) +
+                TimeUnit.SECONDS.toMillis(seconds)
+    }
+
+    // Function to fetch episode details with language support
     private fun fetchEpisodeDetails() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val episodeData: WatchEpisode? = fetchWatchEpisode(entityId, season, episode)
+                // Fetch episode data based on entityId, season, episode, and user language
+                val episodeData: WatchEpisode? = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en") // Default to "en" if null
 
                 withContext(Dispatchers.Main) {
                     if (episodeData != null) {
@@ -131,6 +146,8 @@ class WatchPage : AppCompatActivity() {
 
                         // Fetch and display next episode's title
                         fetchNextEpisodeTitle()
+                    } else {
+                        Log.e("WatchPage", "No episode data found for entityId: $entityId, season: $season, episode: $episode")
                     }
                 }
             } catch (e: Exception) {
@@ -141,7 +158,7 @@ class WatchPage : AppCompatActivity() {
 
     // Function to start the timer for showing the Continue button and start countdown
     private fun setupContinueButtonTimer(durationMillis: Long) {
-        val delayMillis = (durationMillis * 0.95).toLong()
+        val delayMillis = (durationMillis * 0.99).toLong()
         Handler(Looper.getMainLooper()).postDelayed({
             continueButton.visibility = View.VISIBLE
             nextEpisodeTitle.visibility = View.VISIBLE
@@ -171,12 +188,12 @@ class WatchPage : AppCompatActivity() {
         handler.post(countdownRunnable)
     }
 
-    // Update the method to fetch next episode title
+    // Function to fetch the next episode title
     private fun fetchNextEpisodeTitle() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val nextEpisodeData: WatchEpisode? =
-                    fetchWatchEpisode(entityId, season, episode + 1)
+                    fetchWatchEpisode(entityId, season, episode + 1, userLanguage ?: "en") // Default to "en" if null
 
                 withContext(Dispatchers.Main) {
                     if (nextEpisodeData != null) {
@@ -199,7 +216,6 @@ class WatchPage : AppCompatActivity() {
             try {
                 Log.d("WatchPage", "Attempting to mark episode S${season}E${episode} as watched.")
 
-                // Assuming userId is passed through intent
                 val progress = UserProgress(
                     userId = userId,
                     videoId = currentVideoId,
@@ -211,7 +227,6 @@ class WatchPage : AppCompatActivity() {
                     entityId = entityId
                 )
 
-                // Check if the episode has already been marked as watched
                 val existingProgress = fetchUserProgress(userId, entityId)
                 val success = if (existingProgress == null) {
                     createUserProgress(progress)
@@ -234,21 +249,6 @@ class WatchPage : AppCompatActivity() {
                 Log.e("WatchPage", "Error marking episode as watched: ${e.message}")
             }
         }
-    }
-
-
-
-
-    // Function to convert the "duration" field (formatted as time) to milliseconds
-    private fun convertDurationToMillis(duration: String): Long {
-        val timeParts = duration.split(":")
-        val hours = timeParts[0].toLong()
-        val minutes = timeParts[1].toLong()
-        val seconds = timeParts[2].toLong()
-
-        return TimeUnit.HOURS.toMillis(hours) + TimeUnit.MINUTES.toMillis(minutes) + TimeUnit.SECONDS.toMillis(
-            seconds
-        )
     }
 
     // Function to go to the next episode

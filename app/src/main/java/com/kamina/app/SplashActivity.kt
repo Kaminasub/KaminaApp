@@ -51,9 +51,9 @@ class SplashActivity : ComponentActivity() {
 fun SplashScreen() {
     // Gradient background colors
     val gradientColors = listOf(
-        Color(0xFF9B34EF),
-        Color(0xFF490CB0),
-        Color.Transparent
+        Color(0xFF182459), // #663dff at 0%
+        Color(0xFF14143C),
+        Color(0xFF000000)
     )
 
     // Animation for spinning the image

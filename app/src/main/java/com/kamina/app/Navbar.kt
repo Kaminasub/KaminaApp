@@ -1,10 +1,10 @@
-
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -80,7 +80,8 @@ fun Navbar(navController: NavHostController, avatarChanged: Boolean) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Brush.horizontalGradient(colors = gradientColors))  // Apply gradient background
-            .padding(10.dp),
+            .padding(5.dp)  // Increase padding for better TV navigation
+            .focusable(),  // Make it focusable for TV remotes
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -89,12 +90,13 @@ fun Navbar(navController: NavHostController, avatarChanged: Boolean) {
             painter = painterResource(id = R.drawable.skull),
             contentDescription = "Home",
             modifier = Modifier
-                .size(50.dp)
+                .size(40.dp)  // Increase size for TV screen
                 .clickable {
                     // Direct Intent to HomePageActivity (Activity navigation)
                     val intent = Intent(context, HomePageActivity::class.java)
                     context.startActivity(intent)
                 }
+                .focusable()  // Make clickable elements focusable for TV remotes
         )
 
         // Right User Icon with Dropdown Menu
@@ -103,14 +105,15 @@ fun Navbar(navController: NavHostController, avatarChanged: Boolean) {
                 painter = painter, // Coil painter to load user icon
                 contentDescription = "User Menu",
                 modifier = Modifier
-                    .size(50.dp)
+                    .size(40.dp)  // Increase size for TV screen
                     .clickable { expanded = true }
+                    .focusable()  // Ensure focus can be received by the remote
             )
 
             DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.width(120.dp)
+                modifier = Modifier.width(150.dp)  // Increase width for better visibility on TV
             ) {
                 DropdownMenuItem(
                     onClick = {
@@ -171,9 +174,6 @@ fun Navbar(navController: NavHostController, avatarChanged: Boolean) {
         }
     }
 }
-
-
-
 
 // Function to fetch the user icon from the backend
 fun fetchUserIcon(userId: String, onResult: (String?) -> Unit) {

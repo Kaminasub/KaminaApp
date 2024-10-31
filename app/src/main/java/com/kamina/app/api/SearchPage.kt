@@ -10,19 +10,36 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 // Data class for search results and suggestions
-data class SearchResult(val id: Int, val name: String, val thumbnail: String)
-data class AutocompleteSuggestion(val suggestion: String)
+data class SearchResult(
+    val id: Int,
+    val name: String,
+    val thumbnail: String?,
+    val type: String
+)
+
+data class AutocompleteSuggestion(
+    val suggestion: String
+)
 
 // API service for search
 interface SearchApiService {
-    @GET("search/autocomplete")
-    fun getAutocompleteSuggestions(@Query("query") query: String): Call<List<AutocompleteSuggestion>>
 
+    // Fetch autocomplete suggestions, filtered by language
+    @GET("search/autocomplete")
+    fun getAutocompleteSuggestions(
+        @Query("query") query: String,
+        @Query("language") language: String // Pass the language parameter
+    ): Call<List<AutocompleteSuggestion>>
+
+    // Fetch search results, filtered by language
     @GET("search/results")
-    fun getSearchResults(@Query("query") query: String): Call<List<SearchResult>>
+    fun getSearchResults(
+        @Query("query") query: String,
+        @Query("language") language: String // Pass the language parameter
+    ): Call<List<SearchResult>>
 }
 
-// Retrofit instance for search API
+// Retrofit instance for Search API
 private val SearchPageretrofit = Retrofit.Builder()
     .baseUrl("https://api.kaminajp.com/api/")
     .addConverterFactory(GsonConverterFactory.create())
@@ -30,14 +47,15 @@ private val SearchPageretrofit = Retrofit.Builder()
 
 private val SearchApi = SearchPageretrofit.create(SearchApiService::class.java)
 
-// Functions to fetch data from the API
-fun fetchAutocompleteSuggestions(query: String, onResult: (List<AutocompleteSuggestion>?) -> Unit) {
-    SearchApi.getAutocompleteSuggestions(query).enqueue(object : Callback<List<AutocompleteSuggestion>> {
+// Function to fetch autocomplete suggestions
+fun fetchAutocompleteSuggestions(query: String, language: String, onResult: (List<AutocompleteSuggestion>?) -> Unit) {
+    SearchApi.getAutocompleteSuggestions(query, language).enqueue(object : Callback<List<AutocompleteSuggestion>> {
         override fun onResponse(call: Call<List<AutocompleteSuggestion>>, response: Response<List<AutocompleteSuggestion>>) {
             if (response.isSuccessful) {
                 onResult(response.body())
             } else {
-                Log.e("SearchAPI", "API Error: ${response.message()}")
+                Log.e("SearchAPI", "API Error: ${response.code()} - ${response.message()}")
+                Log.e("SearchAPI", "Response Body: ${response.errorBody()?.string()}")
                 onResult(null)
             }
         }
@@ -48,8 +66,9 @@ fun fetchAutocompleteSuggestions(query: String, onResult: (List<AutocompleteSugg
         }
     })
 }
-fun fetchSearchResults(query: String, onResult: (List<SearchResult>?) -> Unit) {
-    SearchApi.getSearchResults(query).enqueue(object : Callback<List<SearchResult>> {
+
+fun fetchSearchResults(query: String, language: String, onResult: (List<SearchResult>?) -> Unit) {
+    SearchApi.getSearchResults(query, language).enqueue(object : Callback<List<SearchResult>> {
         override fun onResponse(call: Call<List<SearchResult>>, response: Response<List<SearchResult>>) {
             if (response.isSuccessful) {
                 try {
@@ -61,7 +80,8 @@ fun fetchSearchResults(query: String, onResult: (List<SearchResult>?) -> Unit) {
                     onResult(null)
                 }
             } else {
-                Log.e("SearchAPI", "API Error: ${response.message()}")
+                Log.e("SearchAPI", "API Error: ${response.code()} - ${response.message()}")
+                Log.e("SearchAPI", "Response Body: ${response.errorBody()?.string()}")
                 onResult(null)
             }
         }
@@ -72,4 +92,3 @@ fun fetchSearchResults(query: String, onResult: (List<SearchResult>?) -> Unit) {
         }
     })
 }
-
