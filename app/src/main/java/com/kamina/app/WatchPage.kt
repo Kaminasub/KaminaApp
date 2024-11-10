@@ -2,12 +2,16 @@ package com.kamina.app
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.WindowManager
+import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -21,6 +25,7 @@ import com.kamina.app.api.createUserProgress
 import com.kamina.app.api.fetchUserProgress
 import com.kamina.app.api.fetchWatchEpisode
 import com.kamina.app.api.updateUserProgress
+import io.github.edsuns.adfilter.AdFilter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,63 +38,53 @@ class WatchPage : AppCompatActivity() {
     private var season: Int = 1
     private var episode: Int = 1
     private var userId: Int = -1
-    private var videoId: Int = -1  // Add videoId to track the video
+    private var videoId: Int = -1
     private lateinit var webView: WebView
     private lateinit var continueButton: Button
     private lateinit var handler: Handler
     private lateinit var nextEpisodeTitle: TextView
-    private lateinit var countdownTextView: TextView // TextView for countdown
+    private lateinit var countdownTextView: TextView
     private var currentVideoId: Int = -1
-    private var countdownTime = 10  // Initial countdown value
-    private var userLanguage: String? = null // Dynamically handle language, nullable
+    private var countdownTime = 10
+    private var userLanguage: String? = null
+
+    private lateinit var adFilter: AdFilter
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Set the activity to full-screen
         window.setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         )
 
-        // Set the content view to the layout with WebView and Continue button
         setContentView(R.layout.activity_watch_page)
 
-        // Initialize the WebView, Continue button, Next Episode Title, and Countdown Text
         webView = findViewById(R.id.episode_webview)
         continueButton = findViewById(R.id.continueButton)
-        continueButton.visibility = View.GONE  // Initially hide the button
+        continueButton.visibility = View.GONE
         nextEpisodeTitle = findViewById(R.id.nextEpisodeTitle)
-        countdownTextView = findViewById(R.id.countdownTextView)  // New TextView for countdown
-        countdownTextView.visibility = View.GONE  // Initially hide the countdown text
+        countdownTextView = findViewById(R.id.countdownTextView)
+        countdownTextView.visibility = View.GONE
 
-        // Extract the entityId, season, episode, userId, and userLanguage from the intent
         entityId = intent.getIntExtra("entityId", -1)
         season = intent.getIntExtra("season", 1)
         episode = intent.getIntExtra("episode", 1)
         userId = intent.getIntExtra("userId", -1)
-        userLanguage = intent.getStringExtra("userLanguage") // Get user language from intent
-        Log.d("WatchPage", "Received userId in WatchPage: $userId, language: $userLanguage")
+        userLanguage = intent.getStringExtra("userLanguage")
 
-        if (userId == -1) {
-            Log.e("WatchPage", "Invalid userId passed to WatchPage")
-        }
+        adFilter = AdFilter.create(this)
 
-        // Configure WebView
         setupWebView()
-
-        // Fetch episode details and load the video
         fetchEpisodeDetails()
 
-        // Handle Continue button click to move to the next episode
         continueButton.setOnClickListener {
-            handler.removeCallbacksAndMessages(null)  // Cancel the countdown if the button is clicked
+            handler.removeCallbacksAndMessages(null)
             markEpisodeAsWatchedAndGoToNext()
         }
     }
 
-    // Function to configure WebView
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         val webSettings: WebSettings = webView.settings
@@ -97,23 +92,82 @@ class WatchPage : AppCompatActivity() {
         webSettings.domStorageEnabled = true
         webSettings.mediaPlaybackRequiresUserGesture = false
 
-        // Enable full-screen video
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
-                // Enter full-screen mode when playing video
                 view.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
                 setContentView(view)
             }
 
             override fun onHideCustomView() {
-                // Exit full-screen mode when video is done
                 setContentView(R.layout.activity_watch_page)
-                setupWebView()  // Reinitialize WebView after exiting full screen
+                setupWebView()
+            }
+
+            // Updated method to handle console messages
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                val message = consoleMessage.message()
+                val sourceID = consoleMessage.sourceId()
+                val lineNumber = consoleMessage.lineNumber()
+
+                if (message.contains("ReferenceError") && message.contains("is not defined")) {
+                    // Suppress specific "ReferenceError" messages
+                    Log.d("AdBlocker", "Suppressed console error: $message at $sourceID:$lineNumber")
+                    return true // Return true to suppress the message from appearing in logs
+                }
+
+                // Log other console messages if needed
+                return super.onConsoleMessage(consoleMessage)
             }
         }
 
-        // Handle redirects inside WebView
-        webView.webViewClient = WebViewClient()
+
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): WebResourceResponse? {
+                val url = request.url.toString()
+                return if (shouldBlockUrl(url)) {
+                    WebResourceResponse("text/plain", "utf-8", null)
+                } else {
+                    adFilter.shouldIntercept(view, request)?.resourceResponse
+                }
+            }
+
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                adFilter.performScript(view, url)
+            }
+        }
+    }
+
+    // Helper function to match ad URLs
+    private fun shouldBlockUrl(url: String): Boolean {
+        return url.contains("mc.yandex.ru") ||
+                url.contains("googletagmanager.com") ||
+                //STREAMWISH///
+                url.contains("dalysv.com") ||
+                url.contains("media.dalysv.com") ||
+                url.contains("media.dalysv.com") ||
+                url.contains("jouwaikekaivep.net") ||
+                url.contains("outwingullom.com") ||
+                url.contains("dnsads.js") ||
+                url.contains("code.min.js") ||
+                url.contains("roseimgs.com") ||
+                url.contains("streamwish.com/js") ||
+                url.contains("naupsakiwhy.com") ||
+                url.contains("psoroumukr.com") ||
+                url.contains("ap.taichnewcal.com") ||
+
+
+                //OKRU////
+                url.contains("ok.ru/dk?cmd=videostatnew") ||
+                url.contains("tns-counter.ru") ||
+                url.contains("ad.mail.ru") ||
+                url.contains("vk.com/js/lang-pack.js") ||
+                url.contains("top-fwz1.mail.ru") ||
+                url.contains("st.okcdn.ru/static/one-video-player")
+
     }
 
     // Function to convert the "duration" field (formatted as HH:mm:ss) to milliseconds
@@ -133,7 +187,12 @@ class WatchPage : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Fetch episode data based on entityId, season, episode, and user language
-                val episodeData: WatchEpisode? = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en") // Default to "en" if null
+                val episodeData: WatchEpisode? = fetchWatchEpisode(
+                    entityId,
+                    season,
+                    episode,
+                    userLanguage ?: "en"
+                ) // Default to "en" if null
 
                 withContext(Dispatchers.Main) {
                     if (episodeData != null) {
@@ -147,7 +206,10 @@ class WatchPage : AppCompatActivity() {
                         // Fetch and display next episode's title
                         fetchNextEpisodeTitle()
                     } else {
-                        Log.e("WatchPage", "No episode data found for entityId: $entityId, season: $season, episode: $episode")
+                        Log.e(
+                            "WatchPage",
+                            "No episode data found for entityId: $entityId, season: $season, episode: $episode"
+                        )
                     }
                 }
             } catch (e: Exception) {
@@ -193,7 +255,12 @@ class WatchPage : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val nextEpisodeData: WatchEpisode? =
-                    fetchWatchEpisode(entityId, season, episode + 1, userLanguage ?: "en") // Default to "en" if null
+                    fetchWatchEpisode(
+                        entityId,
+                        season,
+                        episode + 1,
+                        userLanguage ?: "en"
+                    ) // Default to "en" if null
 
                 withContext(Dispatchers.Main) {
                     if (nextEpisodeData != null) {
@@ -264,11 +331,21 @@ class WatchPage : AppCompatActivity() {
 
     // Handle back press to return to the detail page
     override fun onBackPressed() {
-        val intent = Intent(this, DetailPageActivity::class.java)
-        intent.putExtra("entityId", entityId)
-        intent.putExtra("userId", userId)
+        // Stop loading if WebView is active
+        webView.stopLoading()
+
+        // Redirect back to the DetailPageActivity with the correct entityId, userId, and userLanguage
+        val intent = Intent(this, DetailPageActivity::class.java).apply {
+            putExtra("entityId", entityId)
+            putExtra("userId", userId)
+            putExtra("userLanguage", userLanguage) // Include user language
+        }
         startActivity(intent)
-        finish()
+        finish() // Finish the current activity
+
+        // Call super to handle the default back press behavior
         super.onBackPressed()
     }
 }
+
+//SERIES

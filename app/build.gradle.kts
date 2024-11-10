@@ -50,6 +50,15 @@ android {
 }
 
 dependencies {
+
+    implementation(libs.timber)
+    implementation("com.github.Edsuns.AdblockAndroid:ad-filter:0.9.1") {
+        exclude(group = "org.jetbrains.anko", module = "anko-commons")
+        exclude(group = "org.jetbrains.anko", module = "anko-design")
+    }
+
+
+
     implementation (libs.okhttp)
     implementation(libs.androidx.lifecycle.runtime.ktx.v286)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
