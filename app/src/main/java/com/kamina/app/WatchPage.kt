@@ -10,6 +10,7 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -123,17 +124,20 @@ class WatchPage : AppCompatActivity() {
 
 
         webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(
-                view: WebView,
-                request: WebResourceRequest
-            ): WebResourceResponse? {
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                 val url = request.url.toString()
-                return if (shouldBlockUrl(url)) {
+                // Avoid blocking essential video resources
+                return if (shouldBlockUrl(url) && !url.contains("hlswish.com")) {
                     WebResourceResponse("text/plain", "utf-8", null)
                 } else {
                     adFilter.shouldIntercept(view, request)?.resourceResponse
                 }
             }
+
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                Log.e("WebViewError", "Error: ${error.description} on URL ${request.url}")
+            }
+
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 adFilter.performScript(view, url)
@@ -254,18 +258,27 @@ class WatchPage : AppCompatActivity() {
     private fun fetchNextEpisodeTitle() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val nextEpisodeData: WatchEpisode? =
-                    fetchWatchEpisode(
+                // Attempt to fetch the next episode in the current season
+                var nextEpisodeData: WatchEpisode? = fetchWatchEpisode(
+                    entityId,
+                    season,
+                    episode + 1,
+                    userLanguage ?: "en"
+                )
+
+                // If no next episode in current season, try season + 1, episode 1
+                if (nextEpisodeData == null) {
+                    nextEpisodeData = fetchWatchEpisode(
                         entityId,
-                        season,
-                        episode + 1,
+                        season + 1,
+                        1,
                         userLanguage ?: "en"
-                    ) // Default to "en" if null
+                    )
+                }
 
                 withContext(Dispatchers.Main) {
                     if (nextEpisodeData != null) {
-                        val nextTitle =
-                            "Up Next:\nS${season}E${episode + 1}: ${nextEpisodeData.title}"
+                        val nextTitle = "Up Next:\nS${nextEpisodeData.season}E${nextEpisodeData.episode}: ${nextEpisodeData.title}"
                         nextEpisodeTitle.text = nextTitle
                     } else {
                         nextEpisodeTitle.text = ""
@@ -321,11 +334,25 @@ class WatchPage : AppCompatActivity() {
     // Function to go to the next episode
     private fun goToNextEpisode() {
         CoroutineScope(Dispatchers.Main).launch {
+            // First, try the next episode in the current season
             episode += 1
-            continueButton.visibility = View.GONE
-            nextEpisodeTitle.visibility = View.GONE
-            countdownTextView.visibility = View.GONE  // Hide the countdown text
-            fetchEpisodeDetails()  // Fetch the new episode data and load the video
+            var episodeData: WatchEpisode? = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en")
+
+            // If no more episodes in current season, go to first episode of next season
+            if (episodeData == null) {
+                season += 1
+                episode = 1
+                episodeData = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en")
+            }
+
+            if (episodeData != null) {
+                continueButton.visibility = View.GONE
+                nextEpisodeTitle.visibility = View.GONE
+                countdownTextView.visibility = View.GONE  // Hide the countdown text
+                fetchEpisodeDetails()  // Fetch the new episode data and load the video
+            } else {
+                Log.e("WatchPage", "No further episodes found.")
+            }
         }
     }
 

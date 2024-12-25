@@ -16,6 +16,7 @@ import com.kamina.app.LoginActivity
 import com.kamina.app.MoviesActivity
 import com.kamina.app.SearchPageActivity
 import com.kamina.app.SeriesActivity
+import com.kamina.app.TvPageActivity
 
 @Composable
 fun UserDropdownMenu(
@@ -54,6 +55,15 @@ fun UserDropdownMenu(
                 (context as? Activity)?.finishAffinity()
             },
             text = { Text("Movies") }
+        )
+        DropdownMenuItem(
+            onClick = {
+                onDismissRequest()
+                val intent = Intent(context, TvPageActivity::class.java)
+                context.startActivity(intent)
+                (context as? Activity)?.finishAffinity()
+            },
+            text = { Text("TV") }
         )
         DropdownMenuItem(
             onClick = {

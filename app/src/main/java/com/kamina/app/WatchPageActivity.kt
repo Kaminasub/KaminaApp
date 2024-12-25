@@ -46,12 +46,14 @@ class WatchPageActivity : ComponentActivity() {
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true
         webSettings.mediaPlaybackRequiresUserGesture = false
+        webSettings.useWideViewPort = true // Fit content to screen width
+        webSettings.loadWithOverviewMode = true
+        webSettings.builtInZoomControls = true
+        webSettings.displayZoomControls = false
 
         // Set WebView client with ad filtering
         webView.webViewClient = object : WebViewClient() {
-
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
-                // Block specific ad-related URLs
                 return if (shouldBlockUrl(request.url.toString())) {
                     WebResourceResponse("text/plain", "utf-8", null)
                 } else {
@@ -66,21 +68,11 @@ class WatchPageActivity : ComponentActivity() {
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url = request.url.toString()
-                return if (url.startsWith("http://") || url.startsWith("https://")) {
-                    false // Allow HTTP and HTTPS URLs
-                } else {
-                    true // Block other URL schemes
-                }
+                return !(url.startsWith("http://") || url.startsWith("https://"))
             }
 
-            override fun onReceivedError(
-                view: WebView,
-                request: WebResourceRequest,
-                error: WebResourceError
-            ) {
-                if (error.errorCode == WebViewClient.ERROR_UNSUPPORTED_SCHEME ||
-                    error.errorCode == WebViewClient.ERROR_UNKNOWN) {
-                    // Ignore unsupported scheme and unknown errors
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                if (error.errorCode == WebViewClient.ERROR_UNSUPPORTED_SCHEME || error.errorCode == WebViewClient.ERROR_UNKNOWN) {
                     return
                 }
                 super.onReceivedError(view, request, error)
@@ -102,25 +94,34 @@ class WatchPageActivity : ComponentActivity() {
                 consoleMessage?.let {
                     if (it.message().contains("ReferenceError")) {
                         Log.d("AdBlocker", "Suppressed console error: ${it.message()} at ${it.sourceId()}:${it.lineNumber()}")
-                        return true // Suppress the message
+                        return true
                     }
                 }
-                return super.onConsoleMessage(consoleMessage) // Default behavior for other messages
+                return super.onConsoleMessage(consoleMessage)
             }
         }
 
-        // Load the video URL passed from the previous activity
+        // Load the video URL passed from the previous activity and fit video to the frame
         val videoUrl = intent.getStringExtra("videoUrl") ?: ""
         webView.loadUrl(videoUrl)
+
+        // Inject JavaScript to make video elements responsive
+        webView.evaluateJavascript("""
+            document.addEventListener("DOMContentLoaded", function() {
+                var video = document.querySelector('video');
+                if (video) {
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    video.style.objectFit = 'cover';
+                }
+            });
+        """.trimIndent(), null)
     }
 
-    // Helper function to match ad URLs
     private fun shouldBlockUrl(url: String): Boolean {
         return url.contains("mc.yandex.ru") ||
                 url.contains("googletagmanager.com") ||
-                //STREAMWISH///
                 url.contains("dalysv.com") ||
-                url.contains("media.dalysv.com") ||
                 url.contains("media.dalysv.com") ||
                 url.contains("jouwaikekaivep.net") ||
                 url.contains("outwingullom.com") ||
@@ -131,19 +132,14 @@ class WatchPageActivity : ComponentActivity() {
                 url.contains("naupsakiwhy.com") ||
                 url.contains("psoroumukr.com") ||
                 url.contains("ap.taichnewcal.com") ||
-
-
-                //OKRU////
                 url.contains("ok.ru/dk?cmd=videostatnew") ||
                 url.contains("tns-counter.ru") ||
                 url.contains("ad.mail.ru") ||
                 url.contains("vk.com/js/lang-pack.js") ||
                 url.contains("top-fwz1.mail.ru") ||
                 url.contains("st.okcdn.ru/static/one-video-player")
-
     }
 
-    // Handle back press to navigate back within WebView
     override fun onBackPressed() {
         if (webView.canGoBack()) {
             webView.goBack()
@@ -152,5 +148,6 @@ class WatchPageActivity : ComponentActivity() {
         }
     }
 }
+
 
 //MOVIES

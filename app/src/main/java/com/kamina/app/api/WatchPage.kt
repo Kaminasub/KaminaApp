@@ -28,9 +28,18 @@ interface WatchPageApiService {
         @Path("entityId") entityId: Int,
         @Path("season") season: Int,
         @Path("episode") episode: Int,
-        @Query("language") language: String // Pass language explicitly
+        @Query("language") language: String
     ): WatchEpisode
+
+    // New API to fetch all episodes in a specific season
+    @GET("episodes/{entityId}/seasons/{season}")
+    suspend fun getEpisodesInSeason(
+        @Path("entityId") entityId: Int,
+        @Path("season") season: Int,
+        @Query("language") language: String
+    ): List<WatchEpisode>
 }
+
 
 // Retrofit initialization for WatchPage API
 private val watchPageRetrofit = Retrofit.Builder()
@@ -50,5 +59,14 @@ suspend fun fetchWatchEpisode(entityId: Int, season: Int, episode: Int, language
         // Print stack trace for debugging in case of error
         e.printStackTrace()
         null
+    }
+}
+suspend fun fetchEpisodesInSeason(entityId: Int, season: Int, language: String): Int {
+    return try {
+        val episodes = watchPageApi.getEpisodesInSeason(entityId, season, language)
+        episodes.size // Return the count of episodes
+    } catch (e: Exception) {
+        e.printStackTrace()
+        0 // Return 0 if there's an error
     }
 }

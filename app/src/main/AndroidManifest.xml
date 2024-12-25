@@ -106,6 +106,13 @@
             android:screenOrientation="landscape"
             android:theme="@style/Theme.KaminaApp">
         </activity>
+        <activity
+            android:name=".TvPageActivity"
+            android:hardwareAccelerated="true"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.KaminaApp">
+        </activity>
 
     </application>
 

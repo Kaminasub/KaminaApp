@@ -21,39 +21,33 @@ data class ThumbnailData(
     val status: Int
 )
 
-
 // API service interface for fetching continue watching and updating status
 interface ContinueApiService {
 
-    // Fetches the list of entities the user is currently watching
     @GET("user_entities/{userId}/continue-watching")
     fun getContinueWatching(
         @Path("userId") userId: String,
         @Query("language") language: String
     ): Call<List<ThumbnailData>>
 
-    // Fetches the status of a specific entity (movie/series) for a specific user
     @GET("entities/{entityId}/status/{userId}")
     fun getUserEntityStatus(
         @Path("userId") userId: Int,
         @Path("entityId") entityId: Int
-    ): Call<ThumbnailData>  // Returns a ThumbnailData object containing entity status
+    ): Call<ThumbnailData>
 
-    // Updates the user's status for a specific entity (e.g., Following, Completed)
     @PUT("entities/{entityId}/status/{userId}")
     fun updateUserEntityStatus(
         @Path("userId") userId: Int,
         @Path("entityId") entityId: Int,
-        @Body body: Map<String, Int>  // Body containing the status to update
+        @Body body: Map<String, Int>
     ): Call<Void>
 
-    // Fetches the statuses for all entities associated with a user in a batch
     @GET("user_entities/statuses/{userId}")
     fun getUserEntityStatuses(
         @Path("userId") userId: Int
-    ): Call<List<ThumbnailData>> // Returns a list of entities with their statuses
+    ): Call<List<ThumbnailData>>
 }
-
 
 // Function to fetch continue-watching data
 fun fetchContinueWatching(userId: String, userLanguage: String, onResult: (List<ThumbnailData>?) -> Unit) {
@@ -84,7 +78,6 @@ fun fetchContinueWatching(userId: String, userLanguage: String, onResult: (List<
         }
     })
 }
-
 
 // Helper function to convert status code to text
 fun getStatusText(status: Int): String {
@@ -120,6 +113,7 @@ fun updateUserStatus(userId: Int, entityId: Int, status: Int) {
     })
 }
 
+// Existing function with callback-based approach
 fun fetchUserEntityStatus(userId: Int, entityId: Int, onResult: (ThumbnailData?) -> Unit) {
     val retrofit = Retrofit.Builder()
         .baseUrl("https://api.kaminajp.com/api/")
@@ -144,4 +138,19 @@ fun fetchUserEntityStatus(userId: Int, entityId: Int, onResult: (ThumbnailData?)
             onResult(null)
         }
     })
+}
+
+// New suspend function to fetch user entity status directly
+suspend fun fetchUserEntityStatusSuspend(userId: Int, entityId: Int): ThumbnailData? {
+    return try {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://api.kaminajp.com/api/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val api = retrofit.create(ContinueApiService::class.java)
+        api.getUserEntityStatus(userId, entityId).execute().body()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }

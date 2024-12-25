@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.kamina.app.api.fetchEpisodesInSeason
+import com.kamina.app.api.fetchUserEntityStatusSuspend
 import com.kamina.app.api.fetchUserProgress
 import com.kamina.app.ui.components.CustomButton
 import kotlinx.coroutines.CoroutineScope
@@ -30,54 +32,66 @@ fun PlayButton(
     var nextSeason by remember { mutableStateOf(1) }
     var nextEpisode by remember { mutableStateOf(1) }
 
-    // Fetch user progress for series
+    // Check user entity status and progress
     LaunchedEffect(entityId, userId) {
         CoroutineScope(Dispatchers.IO).launch {
-            val userProgress = fetchUserProgress(userId, entityId)
-            if (userProgress != null) {
-                // Update button text and progress based on whether the user has watched the content
-                if (userProgress.isWatched) {
-                    buttonText = "Continue"
-                    nextSeason = userProgress.currentSeason
-                    nextEpisode = userProgress.currentEpisode + 1
-                } else {
-                    nextSeason = userProgress.currentSeason
-                    nextEpisode = userProgress.currentEpisode
-                }
-                Log.d("PlayButton", "User progress found: season $nextSeason, episode $nextEpisode")
+            // Fetch entity status directly with the suspend function
+            val status = fetchUserEntityStatusSuspend(userId, entityId)
+            if (status != null && status.status == 2) {  // Status code 2 means "Completed"
+                buttonText = "Watch Again"
             } else {
-                Log.d("PlayButton", "No user progress found, starting from S1E1")
+                // Fetch user progress for series
+                val userProgress = fetchUserProgress(userId, entityId)
+                if (userProgress != null) {
+                    if (userProgress.isWatched) {
+                        buttonText = "Continue"
+                        nextSeason = userProgress.currentSeason
+                        nextEpisode = userProgress.currentEpisode + 1
+                    } else {
+                        nextSeason = userProgress.currentSeason
+                        nextEpisode = userProgress.currentEpisode
+                    }
+
+                    // Fetch total episodes in the current season to handle end of season
+                    val totalEpisodes = fetchEpisodesInSeason(entityId, nextSeason, userLanguage)
+                    if (nextEpisode > totalEpisodes) {
+                        nextSeason++
+                        nextEpisode = 1
+                    }
+                    Log.d("PlayButton", "User progress found: season $nextSeason, episode $nextEpisode")
+                } else {
+                    Log.d("PlayButton", "No user progress found, starting from S1E1")
+                }
             }
         }
     }
 
     // Apply the passed modifier to the Button
     CustomButton(
-        text = buttonText, // Text dynamically based on progress and isMovie flag
+        text = buttonText,
         onClick = {
             Log.d("PlayButton", "Button clicked. userId: $userId, entityId: $entityId, isMovie: $isMovie")
 
-            // Handle movie play logic
             if (isMovie == 1 && videoFilePath != null) {
+                // Movie play logic
                 val intent = Intent(context, WatchPageActivity::class.java).apply {
                     putExtra("videoUrl", videoFilePath)
                     putExtra("userId", userId)
-                    putExtra("userLanguage", userLanguage)  // Pass user language to WatchPageActivity
+                    putExtra("userLanguage", userLanguage)
                 }
                 context.startActivity(intent)
-            }
-            // Handle series play logic
-            else {
+            } else {
+                // Series play logic
                 val intent = Intent(context, WatchPage::class.java).apply {
                     putExtra("entityId", entityId)
                     putExtra("season", nextSeason)
                     putExtra("episode", nextEpisode)
                     putExtra("userId", userId)
-                    putExtra("userLanguage", userLanguage)  // Pass user language to WatchPage
+                    putExtra("userLanguage", userLanguage)
                 }
                 context.startActivity(intent)
             }
         },
-        modifier = modifier // Apply any external modifier passed to the Button
+        modifier = modifier
     )
 }
