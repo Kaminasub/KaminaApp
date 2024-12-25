@@ -118,9 +118,9 @@ private val detailPageApi = detailPageRetrofit.create(DetailPageApiService::clas
 // API functions for DetailPage
 suspend fun fetchEntityDetails(id: Int, language: String): EntityDetail? {
     return try {
-        Log.d("DetailPageApi", "Fetching entity details for id: $id, language: $language")
+        //Log.d("DetailPageApi", "Fetching entity details for id: $id, language: $language")
         val result = detailPageApi.getEntityDetail(id, language)
-        Log.d("DetailPageApi", "Entity details fetched: $result")
+        //Log.d("DetailPageApi", "Entity details fetched: $result")
         result
     } catch (e: Exception) {
         e.printStackTrace()
@@ -130,9 +130,9 @@ suspend fun fetchEntityDetails(id: Int, language: String): EntityDetail? {
 
 suspend fun fetchCast(id: Int): List<CastMember>? {
     return try {
-        Log.d("DetailPageApi", "Fetching cast for id: $id")
+        //Log.d("DetailPageApi", "Fetching cast for id: $id")
         val result = detailPageApi.getCast(id)
-        Log.d("DetailPageApi", "Cast fetched: $result")
+        //Log.d("DetailPageApi", "Cast fetched: $result")
         result
     } catch (e: Exception) {
         e.printStackTrace()
@@ -142,9 +142,9 @@ suspend fun fetchCast(id: Int): List<CastMember>? {
 
 suspend fun fetchSuggestions(id: Int, language: String): List<Suggestion>? {
     return try {
-        Log.d("DetailPageApi", "Fetching suggestions for id: $id, language: $language")
+        //Log.d("DetailPageApi", "Fetching suggestions for id: $id, language: $language")
         val result = detailPageApi.getSuggestions(id, language)
-        Log.d("DetailPageApi", "Suggestions fetched: $result")
+        //Log.d("DetailPageApi", "Suggestions fetched: $result")
         result
     } catch (e: Exception) {
         e.printStackTrace()
@@ -152,12 +152,14 @@ suspend fun fetchSuggestions(id: Int, language: String): List<Suggestion>? {
     }
 }
 
+
+
 // Fetching seasons with language parameter
 suspend fun fetchSeasons(entityId: Int, language: String): List<Season>? {
     return try {
-        Log.d("DetailPageApi", "Fetching seasons for id: $entityId, language: $language")
+        //Log.d("DetailPageApi", "Fetching seasons for id: $entityId, language: $language")
         val result = detailPageApi.getSeasons(entityId, language)
-        Log.d("DetailPageApi", "Seasons fetched: $result")
+        //Log.d("DetailPageApi", "Seasons fetched: $result")
         result
     } catch (e: Exception) {
         e.printStackTrace()
@@ -198,10 +200,11 @@ suspend fun fetchNextEpisode(entityId: Int, season: Int, episode: Int, language:
         Log.d("DetailPageApi", "Next episode fetched: $result")
         result
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e("DetailPageApi", "Error fetching next episode: ${e.message}", e)
         null
     }
 }
+
 
 // API function to fetch movie details
 suspend fun getMovieDetails(entityId: Int, language: String): WatchPageEpisode? {

@@ -60,16 +60,20 @@ import com.kamina.app.api.WatchPageEpisode
 import com.kamina.app.api.fetchCast
 import com.kamina.app.api.fetchEntityDetails
 import com.kamina.app.api.fetchEpisodes
+import com.kamina.app.api.fetchNextEpisode
 import com.kamina.app.api.fetchSeasons
 import com.kamina.app.api.fetchSuggestions
 import com.kamina.app.api.fetchUserEntityStatus
 import com.kamina.app.api.fetchUserProgress
+import com.kamina.app.api.fetchWatchPageEpisode
 import com.kamina.app.api.getMovieDetails
 import com.kamina.app.api.getStatusText
 import com.kamina.app.api.updateUserStatus
 import com.kamina.app.ui.components.CustomButton
 import com.kamina.app.ui.components.UserDropdownMenu
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DetailPageScreen(entityId: Int, userId: Int, userLanguage: String) {
@@ -158,15 +162,15 @@ fun DetailPageScreen(entityId: Int, userId: Int, userLanguage: String) {
     }
 
     // Additional logging for episodes fetching process
-    coroutineScope.launch {
-        selectedSeason?.let { season ->
-            Log.d("DetailPage", "Manually fetching episodes for entityId: $entityId, season: $season, language: $userLanguage")
-            episodes = fetchEpisodes(entityId, season, userLanguage) ?: emptyList()
-            Log.d("DetailPage", "Manually fetched episodes for season $season: $episodes")
-        } ?: run {
-            Log.e("DetailPage", "Selected season is null, cannot fetch episodes.")
-        }
-    }
+    //coroutineScope.launch {
+    //    selectedSeason?.let { season ->
+    //        Log.d("DetailPage", "Manually fetching episodes for entityId: $entityId, season: $season, language: $userLanguage")
+    //        episodes = fetchEpisodes(entityId, season, userLanguage) ?: emptyList()
+    //        Log.d("DetailPage", "Manually fetched episodes for season $season: $episodes")
+    //    } ?: run {
+    //        Log.e("DetailPage", "Selected season is null, cannot fetch episodes.")
+    //    }
+    //}
 
     Scaffold(
         content = { paddingValues ->
@@ -284,51 +288,70 @@ fun DetailPageScreen(entityId: Int, userId: Int, userLanguage: String) {
 
                                     // Display episode information (only for series)
                                     if (entityDetail.isMovie == 0) {
-                                        userProgress?.let { progress ->
-                                            // Fetch the episode based on user progress
-                                            val progressEpisode = episodes.find {
-                                                it.season == progress.currentSeason && it.episode == progress.currentEpisode
-                                            }
+                                        var nextEpisode by remember { mutableStateOf<Episode?>(null) } // State to hold the next episode
 
-                                            if (progressEpisode != null) {
-                                                // Display the episode based on user progress
-                                                Text(
-                                                    text = "S${progressEpisode.season}E${progressEpisode.episode}: ${progressEpisode.title}",
-                                                    fontSize = 18.sp,
-                                                    color = Color.White,
-                                                    modifier = Modifier.padding(top = 4.dp) // Add padding between name and episode info
-                                                )
+                                        // Fetch the next episode based on user progress
+                                        LaunchedEffect(userProgress) {
+                                            if (userProgress != null) {
+                                                userProgress?.let { progress ->
+                                                    val nextEpisodeData = fetchNextEpisode(
+                                                        entityId = entityDetail.id,
+                                                        season = progress.currentSeason ?: 1,
+                                                        episode = progress.currentEpisode ?: 0, // Assume progress starts with episode 0 for S1E1
+                                                        language = userLanguage
+                                                    )
+
+                                                    // Map WatchPageEpisode to Episode if next episode is found
+                                                    nextEpisode = nextEpisodeData?.let { watchPageEpisode ->
+                                                        Episode(
+                                                            season = watchPageEpisode.season,
+                                                            episode = watchPageEpisode.episode,
+                                                            title = watchPageEpisode.title,
+                                                            description = watchPageEpisode.description,
+                                                            miniatura = "" // Set empty or a valid placeholder since Episode has `miniatura`
+                                                        )
+                                                    } ?: currentEpisode // Fallback to currentEpisode
+                                                }
                                             } else {
-                                                // Fallback to the first episode if no progress episode is found
-                                                currentEpisode?.let { episode ->
-                                                    Text(
-                                                        text = "S${episode.season}E${episode.episode}: ${episode.title}",
-                                                        fontSize = 18.sp,
-                                                        color = Color.White,
-                                                        modifier = Modifier.padding(top = 4.dp)
+                                                // If no user progress, explicitly fetch the first episode (S1E1)
+                                                val firstEpisode = fetchWatchPageEpisode(
+                                                    entityId = entityDetail.id,
+                                                    season = 1,
+                                                    episode = 1,
+                                                    language = userLanguage
+                                                )
+
+                                                nextEpisode = firstEpisode?.let { watchPageEpisode ->
+                                                    Episode(
+                                                        season = watchPageEpisode.season,
+                                                        episode = watchPageEpisode.episode,
+                                                        title = watchPageEpisode.title,
+                                                        description = watchPageEpisode.description,
+                                                        miniatura = "" // Set empty or a valid placeholder since Episode has `miniatura`
                                                     )
                                                 }
                                             }
+                                        }
+
+                                        // Display the next episode information
+                                        nextEpisode?.let { episode ->
+                                            Text(
+                                                text = "S${episode.season}E${episode.episode}: ${episode.title}",
+                                                fontSize = 18.sp,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
                                         } ?: run {
-                                            // Fallback to currentEpisode if no user progress is found
-                                            currentEpisode?.let { episode ->
-                                                Text(
-                                                    text = "S${episode.season}E${episode.episode}: ${episode.title}",
-                                                    fontSize = 18.sp,
-                                                    color = Color.White,
-                                                    modifier = Modifier.padding(top = 4.dp)
-                                                )
-                                            } ?: run {
-                                                // Show a message if no episode information is available
-                                                Text(
-                                                    text = "No episode information available",
-                                                    fontSize = 18.sp,
-                                                    color = Color.Gray,
-                                                    modifier = Modifier.padding(top = 4.dp)
-                                                )
-                                            }
+                                            // Show fallback text if no episode information is available
+                                            Text(
+                                                text = "No episode information available",
+                                                fontSize = 18.sp,
+                                                color = Color.Gray,
+                                                modifier = Modifier.padding(top = 4.dp)
+                                            )
                                         }
                                     }
+
                                 }
                             }
 

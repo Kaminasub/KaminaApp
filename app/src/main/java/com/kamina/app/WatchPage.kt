@@ -330,31 +330,54 @@ class WatchPage : AppCompatActivity() {
             }
         }
     }
+    private fun navigateToDetailPage() {
+        // Stop loading if WebView is active
+        webView.stopLoading()
+
+        // Redirect back to the DetailPageActivity with the correct entityId, userId, and userLanguage
+        val intent = Intent(this, DetailPageActivity::class.java).apply {
+            putExtra("entityId", entityId)
+            putExtra("userId", userId)
+            putExtra("userLanguage", userLanguage) // Include user language
+        }
+        startActivity(intent)
+        finish() // Finish the current activity
+    }
+
 
     // Function to go to the next episode
     private fun goToNextEpisode() {
         CoroutineScope(Dispatchers.Main).launch {
-            // First, try the next episode in the current season
-            episode += 1
-            var episodeData: WatchEpisode? = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en")
+            try {
+                // First, try fetching the next episode in the current season
+                episode += 1
+                var episodeData: WatchEpisode? = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en")
 
-            // If no more episodes in current season, go to first episode of next season
-            if (episodeData == null) {
-                season += 1
-                episode = 1
-                episodeData = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en")
-            }
+                // If no more episodes in the current season, try the first episode of the next season
+                if (episodeData == null) {
+                    season += 1
+                    episode = 1
+                    episodeData = fetchWatchEpisode(entityId, season, episode, userLanguage ?: "en")
+                }
 
-            if (episodeData != null) {
-                continueButton.visibility = View.GONE
-                nextEpisodeTitle.visibility = View.GONE
-                countdownTextView.visibility = View.GONE  // Hide the countdown text
-                fetchEpisodeDetails()  // Fetch the new episode data and load the video
-            } else {
-                Log.e("WatchPage", "No further episodes found.")
+                if (episodeData != null) {
+                    // Update UI and load the next episode details
+                    continueButton.visibility = View.GONE
+                    nextEpisodeTitle.visibility = View.GONE
+                    countdownTextView.visibility = View.GONE  // Hide the countdown text
+                    fetchEpisodeDetails()  // Load the next episode
+                } else {
+                    // No further episodes or seasons found, navigate back to DetailPage
+                    Log.i("WatchPage", "No further episodes or seasons found. Redirecting to DetailPage.")
+                    navigateToDetailPage()
+                }
+            } catch (e: Exception) {
+                Log.e("WatchPage", "Error navigating to next episode: ${e.message}", e)
             }
         }
     }
+
+
 
     // Handle back press to return to the detail page
     override fun onBackPressed() {
